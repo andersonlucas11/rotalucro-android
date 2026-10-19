@@ -1,3 +1,27 @@
 plugins {
-    id 'com.android.application' version '8.9.2' apply false
+    id 'com.android.application'
+}
+
+android {
+    namespace 'br.com.rotalucro.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'br.com.rotalucro.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 3
+        versionName '0.3-financas'
+    }
+
+    buildTypes {
+        debug {
+            debuggable false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
