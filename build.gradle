@@ -18,6 +18,11 @@ android {
         debug {
             debuggable false
         }
+
+        release {
+            minifyEnabled false
+            debuggable false
+        }
     }
 
     compileOptions {
