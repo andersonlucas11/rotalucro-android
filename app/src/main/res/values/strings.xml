@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">RotaLucro</string>
+  <string name="accessibility_explanation">Com sua autorização, lê somente informações visíveis de corridas na Uber Motorista e 99 Motorista para identificar valores, distâncias, duração e conclusão. Não acessa senhas e não envia dados para servidores.</string>
+</resources>
