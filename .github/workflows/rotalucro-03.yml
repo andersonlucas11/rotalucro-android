@@ -1,0 +1,52 @@
+name: RotaLucro 0.3 - APK corrigido
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RotaLucro-v0.3-PROJETO.zip'
+      - '.github/workflows/rotalucro-03.yml'
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Obter arquivos
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Instalar plataforma Android
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Extrair projeto isolado
+        run: |
+          mkdir -p projeto03
+          unzip -q RotaLucro-v0.3-PROJETO.zip -d projeto03
+          test -f projeto03/settings.gradle
+          test -f projeto03/app/build.gradle
+
+      - name: Compilar APK da versao 0.3
+        working-directory: projeto03
+        run: gradle --no-daemon assembleDebug
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RotaLucro-v0.3-APK
+          path: projeto03/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
