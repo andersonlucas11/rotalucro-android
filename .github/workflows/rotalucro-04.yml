@@ -1,0 +1,65 @@
+name: RotaLucro 0.4 - leitor Uber e 99
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'auto04/**'
+      - '.github/workflows/rotalucro-04.yml'
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Preparar projeto 0.4
+        run: |
+          mkdir projeto04
+          unzip -q RotaLucro-v0.3-PROJETO.zip -d projeto04
+          cp auto04/*.java projeto04/app/src/main/java/br/com/rotalucro/app/
+          mkdir -p projeto04/app/src/main/res/xml
+          cp auto04/rotalucro_accessibility.xml projeto04/app/src/main/res/xml/
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root=Path('projeto04')
+          gradle=root/'app/build.gradle'
+          txt=gradle.read_text()
+          txt=txt.replace('versionCode 3','versionCode 4').replace("versionName '0.3-financas'","versionName '0.4-leitor-beta'")
+          gradle.write_text(txt)
+          strings=root/'app/src/main/res/values/strings.xml'
+          s=strings.read_text().replace('</resources>','<string name="accessibility_description">Leitura opcional da Uber Motorista e 99 Motorista para detectar ofertas e encerramentos. Sem ações automáticas em outros aplicativos.</string>\n</resources>')
+          strings.write_text(s)
+          manifest=root/'app/src/main/AndroidManifest.xml'
+          ET.register_namespace('android','http://schemas.android.com/apk/res/android')
+          tree=ET.parse(manifest)
+          app=tree.getroot().find('application')
+          ns='{http://schemas.android.com/apk/res/android}'
+          svc=ET.SubElement(app,'service',{ns+'name':'.AutoRideService',ns+'permission':'android.permission.BIND_ACCESSIBILITY_SERVICE',ns+'exported':'true',ns+'label':'RotaLucro - leitor de corridas'})
+          filt=ET.SubElement(svc,'intent-filter')
+          ET.SubElement(filt,'action',{ns+'name':'android.accessibilityservice.AccessibilityService'})
+          ET.SubElement(svc,'meta-data',{ns+'name':'android.accessibilityservice',ns+'resource':'@xml/rotalucro_accessibility'})
+          act=ET.SubElement(app,'activity',{ns+'name':'.AutoControlActivity',ns+'exported':'true',ns+'label':'RotaLucro - Ligar leitor'})
+          intent=ET.SubElement(act,'intent-filter')
+          ET.SubElement(intent,'action',{ns+'name':'android.intent.action.MAIN'})
+          ET.SubElement(intent,'category',{ns+'name':'android.intent.category.LAUNCHER'})
+          tree.write(manifest,encoding='utf-8',xml_declaration=True)
+          PY
+      - name: Compilar APK beta
+        working-directory: projeto04
+        run: gradle --no-daemon assembleDebug
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RotaLucro-0.4-Leitor-Beta
+          path: projeto04/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
