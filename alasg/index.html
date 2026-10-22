@@ -1,1 +1,423 @@
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALASG - Acesso ao Jogo</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#102a23;color:white;font:16px Arial}main{max-width:500px;padding:32px;background:#1c4136;border-radius:18px}a{color:#89efba}h1{color:#d5b56b}</style><main><h1>🚛 ALASG Transportes & Logística</h1><p>O endereço permanente da ALASG foi reservado neste repositório.</p><p>O jogo completo ainda precisa ser publicado nesta pasta para habilitar a simulação 3D.</p><p>Este repositório é privado. O GitHub Pages pode exigir mudanças de configuração ou de plano para publicar.</p><p><a href="https://github.com/andersonlucas11/rotalucro-android">Voltar ao repositório</a></p></main></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ALASG 3D — Transportadora</title><style>html,body{margin:0;height:100%;overflow:hidden;background:#101d20;color:white;font:14px system-ui}#hud{position:absolute;top:12px;left:12px;background:#0c2425dd;padding:15px;border:1px solid #5a9b83;border-radius:12px;max-width:300px}#hud b{color:#9ef3bf}#help{position:absolute;bottom:12px;left:12px;background:#0c2425cc;padding:10px;border-radius:10px}#info{position:absolute;top:12px;right:12px;background:#0c2425dd;padding:12px;border-radius:10px}button{background:#3b8b69;color:white;border:0;border-radius:7px;padding:8px;cursor:pointer}#mobile{position:absolute;bottom:20px;right:15px;display:grid;grid-template-columns:repeat(3,48px);gap:4px}#mobile button{height:46px;touch-action:none}canvas{display:block}#ops{position:absolute;top:115px;right:12px;width:min(310px,calc(100vw - 24px));background:#092525ee;border:1px solid #549e80;border-radius:12px;padding:12px;max-height:55vh;overflow:auto;z-index:5}#ops summary{font-weight:bold;color:#a5f2c3;cursor:pointer;list-style:none}#ops summary::-webkit-details-marker{display:none}#ops:not([open]){width:auto;max-width:calc(100vw - 24px);padding:10px 14px}#ops:not([open]) summary:before{content:"▶ "}#ops[open] summary:before{content:"▼ "}#ops .line{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #37544a;padding:6px 0}#ops button{margin:3px;font-size:12px}#ops small{color:#b4d2c5}#toast{position:absolute;top:72px;left:12px;background:#134f3f;padding:9px;border-radius:8px;max-width:280px;z-index:4}#mobile{z-index:6}#help{max-width:55vw} @media(max-width:600px){#hud{font-size:11px;padding:8px;max-width:210px}#info{font-size:10px;padding:7px}#ops{top:125px;right:6px;width:230px;max-height:43vh}#help{font-size:10px;bottom:8px;max-width:48vw}#mobile{bottom:8px;right:7px;grid-template-columns:repeat(3,42px)}#mobile button{height:42px}} #menuBtn{position:absolute;top:105px;left:12px;z-index:10;background:#103e35;border:1px solid #7bd7aa;font-weight:800}#menu{position:absolute;top:146px;left:12px;z-index:12;background:#0b2827f5;border:1px solid #78caa4;padding:12px;border-radius:12px;max-width:245px;box-shadow:0 10px 30px #0007}#menu:not([hidden]){display:grid;gap:7px}#menu button{width:100%;text-align:left}#ops{top:105px}#info{top:10px}#hud{max-width:245px}#toast{top:76px;max-width:210px;pointer-events:none}#menuBtn{top:110px}#ops[open]{top:155px;max-height:65vh}#ops:not([open]){top:105px}#hud div:nth-child(4){display:none}@media(max-width:600px){#hud{max-width:175px}#info{max-width:170px}#menuBtn{top:106px}#ops:not([open]){top:145px;right:8px}#ops[open]{top:180px;max-height:50vh}#toast{top:70px;left:8px;max-width:160px;font-size:10px}} </style><style id="layout-fix">#info{top:10px;right:12px;min-width:185px;box-sizing:border-box}#menuBtn{top:91px;right:12px;left:auto;z-index:15;width:185px;text-align:center}#ops,#ops:not([open]),#ops[open]{top:140px;right:12px;left:auto;z-index:9;max-height:calc(100vh - 155px);box-sizing:border-box}#menu{top:137px;right:12px;left:auto;z-index:20;width:230px;max-width:calc(100vw - 24px);box-sizing:border-box}#menu[hidden]{display:none!important}#help{display:none!important}#toast{top:155px;left:12px;max-width:min(240px,40vw);pointer-events:none}#hud{max-width:260px}@media(max-width:700px){#info{top:8px;right:8px;min-width:175px}#menuBtn{top:85px;right:8px;left:auto;width:175px}#ops,#ops:not([open]),#ops[open]{top:132px;right:8px;left:auto;width:min(295px,calc(100vw - 16px));max-height:calc(100vh - 145px)}#menu{top:129px;right:8px;left:auto}#toast{top:147px;left:8px;max-width:35vw}#hud{max-width:45vw}}</style><style>
+#mapEditor{position:absolute;inset:3% 3%;z-index:40;background:#092823f5;border:2px solid #71cda3;border-radius:16px;padding:14px;box-shadow:0 10px 70px #000b;overflow:auto}#mapEditor[hidden]{display:none!important}.mapHead{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#b6fbd3;font-size:17px}.mapSub{font-size:12px;color:#bbd5ca;margin:8px 0}.mapBody{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:12px}#siteMap{width:100%;background:#537c5d;border:1px solid #9acbb4;border-radius:10px;touch-action:none}#siteMap .facility{cursor:grab;stroke:#fff;stroke-width:2}#siteMap .facility.active{stroke:#ffdc6e;stroke-width:5}#siteMap text{font-size:13px;font-weight:700;pointer-events:none;fill:#fff;paint-order:stroke;stroke:#173e35;stroke-width:3}#mapControls{display:flex;flex-direction:column;gap:8px;font-size:12px}#mapControls button{width:100%;text-align:left}#facilityDetails{line-height:1.7;color:#c7e5d7}@media(max-width:700px){#mapEditor{inset:2% 2%;padding:10px}.mapBody{grid-template-columns:1fr}#siteMap{max-height:47vh}#mapControls{display:grid;grid-template-columns:1fr 1fr}#selectedFacility,#facilityDetails,#mapControls small{grid-column:1/-1}#mapControls button{font-size:11px}}
+</style></head><body><div id="hud"><b>ALASG TRANSPORTES & LOGÍSTICA</b><div>Simulador 3D • Funcionários humanos em teste</div><div id="where">Local: Entrada da sede</div><div style="margin-top:8px">🟩 Cabines verde metálico • ⚙️ Oficina • ⛽ Abastecimento</div></div><div id="info">💰 <strong id="cash">R$ 12.000.000</strong><br>🚛 <span id="truckcount">12</span> caminhões <button id="reset">Entrada</button></div><div id="toast">🚛 Operações iniciadas. Use o painel para despachar caminhões.</div><button id="menuBtn">☰ MENU ALASG</button><div id="menu" hidden><button data-panel="fleet">🚛 Frota / Venda</button><button data-panel="tires">🛞 Borracharia</button><button data-panel="people">👷 Funcionários</button><button data-panel="management">🏗️ Empresa</button><button data-panel="history">📒 Histórico</button><button id="mapOpen">🗺️ MAPA / EDITAR INSTALAÇÕES</button><button id="menuClose">✕ Fechar</button></div><details id="ops"><summary>📋 OPERAÇÕES (abrir/fechar)</summary><div id="stats"></div><div style="margin:8px 0"><button id="dispatch">🚛 Despachar caminhão</button><button id="speed">🕒 Tempo 1×</button><button id="auto">⏯ Pausar movimento</button><button id="shift">📅 Avançar turno</button></div><div id="fleet" hidden></div><div id="tires" hidden></div><div id="management" hidden></div><div id="people" hidden></div><div id="history" hidden style="font-size:11px"></div></details><div id="mapEditor" hidden><div class="mapHead"><b>🗺️ EDITOR DA SEDE ALASG</b><button id="mapClose">✕ Fechar</button></div><div class="mapSub">Selecione um prédio no mapa, arraste para reposicionar e clique em Salvar posição. Obras são descontadas do caixa.</div><div class="mapBody"><svg id="siteMap" viewBox="0 0 680 480" role="img" aria-label="Mapa editável das instalações"></svg><aside id="mapControls"><b id="selectedFacility">Selecione uma instalação</b><div id="facilityDetails"></div><button id="moveSave">📍 Salvar posição</button><button id="improveFacility">🔧 Melhorar • R$ 150 mil</button><button id="floorFacility">🏢 Adicionar andar • R$ 350 mil</button><button id="enlargeFacility">📐 Aumentar área • R$ 250 mil</button><button id="shrinkFacility">📏 Diminuir área (retirar última ampliação)</button><button id="rotateFacility">🔄 Girar 90° • R$ 25 mil</button><button id="visitFacility">👁️ Visitar em 3D</button><small>Alterações nesta versão permanecem durante a sessão. Não altere o posto enquanto um caminhão estiver abastecendo.</small></aside></div></div><div id="mobile"><span></span><button data-m="f">▲</button><span></span><button data-m="l">◀</button><button data-m="b">▼</button><button data-m="r">▶</button></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><style id="mobile-game-fix">
+#mobile{display:none!important}
+#touchUi{display:none;position:fixed;inset:0;z-index:7;pointer-events:none}
+#touchPad{position:absolute;bottom:max(22px,env(safe-area-inset-bottom));left:18px;width:150px;height:150px;border:2px solid #ffffff65;border-radius:50%;background:#153f3888;pointer-events:auto;touch-action:none}
+#touchKnob{position:absolute;left:50px;top:50px;width:50px;height:50px;border-radius:50%;background:#6de0aeaa;border:2px solid #e4fff1}
+#touchLook{position:absolute;right:0;top:185px;bottom:110px;width:48%;touch-action:none;pointer-events:auto}
+#touchHint{position:absolute;right:15px;bottom:18px;color:#eafff4;background:#123c33c7;padding:9px;border-radius:10px;font-size:12px}
+#touchRun{position:absolute;bottom:165px;left:45px;border-radius:30px;padding:9px 14px;pointer-events:auto}
+@media(pointer:coarse),(max-width:700px){
+#touchUi{display:block}
+#hud{top:8px;left:8px;font-size:10px!important;padding:7px!important;max-width:38vw!important}
+#info{right:8px;top:8px;min-width:0!important;width:138px;font-size:10px!important}
+#menuBtn{right:8px;top:77px;width:138px;font-size:11px;padding:8px 4px}
+#ops:not([open]){top:113px!important;right:8px!important;width:auto!important;font-size:11px;padding:8px}
+#ops[open]{top:113px!important;right:8px!important;width:min(310px,94vw)!important;max-height:calc(100dvh - 126px)!important}
+#menu{top:115px;right:8px}
+#glbStatus{bottom:4px!important;left:50%!important;transform:translateX(-50%);font-size:9px!important;padding:4px!important;max-width:185px!important;pointer-events:none}
+#toast{top:85px!important;left:8px!important;max-width:37vw!important}
+}
+</style>
+<div id="touchUi"><div id="touchPad"><div id="touchKnob"></div></div><div id="touchLook"></div><button id="touchRun">Correr</button><div id="touchHint">Arraste à direita para olhar ↔</div></div><script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9cc6d8);scene.fog=new THREE.Fog(0x9cc6d8,180,470);const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,900);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=false;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x527266,2.1));const sun=new THREE.DirectionalLight(0xfff3d9,2.7);sun.position.set(80,120,60);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-200;sun.shadow.camera.right=200;sun.shadow.camera.top=200;sun.shadow.camera.bottom=-200;scene.add(sun);
+const mat=(c,metalness=0)=>new THREE.MeshStandardMaterial({color:c,metalness,roughness:metalness?.28:.83});const green=mat(0x64b58c,.62),gold=mat(0xcaa54c,.55),white=mat(0xf2f5f0),black=mat(0x20272b),glass=new THREE.MeshStandardMaterial({color:0x193d46,metalness:.2,roughness:.14,transparent:true,opacity:.78}),concrete=mat(0x777e7a),asphalt=mat(0x464e4d),roof=mat(0x24453f),grass=mat(0x658b55);
+function box(w,h,d,m,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=false;o.receiveShadow=false;parent.add(o);return o}function cyl(r,h,m,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,16),m);o.position.set(x,y,z);o.castShadow=false;parent.add(o);return o}function label(text,x,y,z,size=2){let canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;let c=canvas.getContext('2d');c.fillStyle='#0c352e';c.fillRect(0,0,1024,128);c.fillStyle='#f1d37b';c.font='bold 78px Arial';c.textAlign='center';c.fillText(text,512,91);let mesh=new THREE.Mesh(new THREE.PlaneGeometry(size*8,size),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));mesh.position.set(x,y,z);scene.add(mesh);return mesh}
+box(600,.3,600,grass,0,-.35,0);box(240,.12,270,asphalt,0,-.12,-20);for(let x=-110;x<=110;x+=11)for(let z=-140;z<110;z+=20){if((x+z)%3===0)box(.14,.02,4,white,x,-.04,z)}
+// Corredores sinalizados de circulação, com entrada e saída separadas
+box(23,.035,240,mat(0x505a55),0,-.035,-3);
+for(let z=-100;z<110;z+=16)box(.2,.04,7,gold,0,-.005,z);
+// Entrada e portaria
+box(10,6,12,white,24,3,112);box(11,.7,13,roof,24,6.5,112);box(7,3,.15,glass,24,3,118.1);label('ALASG • PORTARIA',24,7.8,118.2,1.1);box(80,.2,2,concrete,-62,0,120);box(80,.2,2,concrete,62,0,120);
+// Administração
+const facilities={};function captureFacility(id,name,x,z,w,d,fn){const before=scene.children.length;fn();facilities[id]={id,name,x,z,w,d,objects:scene.children.slice(before),floors:1,level:1,expanded:0};}
+captureFacility('admin','Administração',-75,75,46,28,()=>{ 
+box(46,12,28,white,-75,6,75);box(48,1.5,30,roof,-75,12.7,75);for(let x=-94;x<-52;x+=9)box(6,4,.15,glass,x,7,89.1);label('ALASG • ADMINISTRAÇÃO',-75,14.5,90,1.4);
+});
+// Oficina
+captureFacility('workshop','Oficina',66,-75,90,38,()=>{
+box(90,13,38,white,66,6.5,-75);box(94,2,42,roof,66,14,-75);for(let x=30;x<=102;x+=13){box(10,9,.22,glass,x,5,-55.8);box(10,.8,.35,gold,x,10,-55.5)}label('OFICINA • 12 BOXES',66,16,-55,1.5);
+});
+// Abastecimento
+captureFacility('fuel','Abastecimento',-50,-72,60,27,()=>{
+for(let x=-72;x<=-28;x+=22){box(4,5,3,green,x,2.5,-72);box(1.8,1.4,.1,black,x,3.7,-70.4);box(3,.25,3,gold,x,5.2,-72)}box(60,1.3,27,roof,-50,9,-72);for(let x of [-76,-24])for(let z of [-82,-62])box(.9,8,.9,white,x,4,z);label('ABASTECIMENTO',-50,11,-57,1.3);
+});
+// Lavador
+captureFacility('wash','Lavador',-92,-85,26,30,()=>{
+box(26,9,30,white,-92,4.5,-85);box(28,1,32,roof,-92,9.5,-85);label('LAVADOR',-92,11,-69,1);
+});
+// Borracharia como setor construído e editável.
+captureFacility('tires','Borracharia',82,-20,35,24,()=>{
+box(35,9,24,white,82,4.5,-20);box(37,1,26,roof,82,9.5,-20);
+for(let x of [70,82,94]){box(8,6,.25,glass,x,3.8,-7.85);box(8,.45,.4,gold,x,7,-7.65)}
+label('BORRACHARIA',82,11,-7.5,1.1);
+});
+// Cada instalação tem seu próprio pivô 3D, permitindo translação e rotação real.
+for(const f of Object.values(facilities)){
+ const pivot=new THREE.Group();pivot.position.set(f.x,0,f.z);scene.add(pivot);
+ for(const obj of f.objects)pivot.attach(obj);
+ f.group=pivot;f.rotation=0;f.additions=[];
+}
+function truck(x,z,i,brand=['Scania','Volvo','Mercedes'][i%3]){let group=new THREE.Group();group.position.set(x,0,z);scene.add(group);box(4.8,2,10,black,0,1.7,0,group);box(5,4.8,4.3,green,0,4.2,3.8,group);box(5.15,.6,4.6,green,0,6.75,3.7,group);box(4.75,.45,1.0,black,0,2.9,6.08,group);for(let xx of [-1.65,1.65]){box(.85,.48,.18,white,xx,2.35,6.4,group);box(.6,.18,.18,gold,xx,3.1,6.39,group)}box(4.3,.18,.18,gold,0,6.65,6.13,group);box(4.6,2.1,.12,glass,0,5.2,6.02,group);box(5,.32,.2,gold,0,6.95,6,group);box(4.9,.5,.25,gold,0,2.1,6,group);box(5.2,.5,.3,black,0,1.9,6.2,group);
+for(let side of [-1,1]){box(.7,1.2,.24,black,side*2.8,5.15,5.2,group);box(.7,.4,.18,white,side*1.65,3,6.28,group);box(.7,.35,.18,mat(0xbe3838),side*1.8,3.0,-19.5,group)}
+for(let yy=2.6;yy<4;yy+=.4)box(3.1,.09,.12,gold,0,yy,6.28,group);
+box(4.4,.3,.3,black,0,6.6,6.2,group);
+for(let zz=-17;zz<-6;zz+=2.5)box(5.48,.11,.2,gold,0,4.5,zz,group);for(let z0 of [-3.8,-1.1,4.3])for(let xx of [-2.65,2.65]){let wheel=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,.55,18),black);wheel.rotation.z=Math.PI/2;wheel.position.set(xx,1.2,z0);group.add(wheel)}box(5.4,4,15,white,0,4.3,-12,group);box(5.5,.4,15,gold,0,6.4,-12,group);for(let z0 of [-17,-12,-7])for(let xx of [-2.8,2.8]){let w=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.55,18),black);w.rotation.z=Math.PI/2;w.position.set(xx,1.1,z0);group.add(w)}let n=String(i+1).padStart(4,'0');
+// Identificação lateral ALASG e placas individuais nos veículos.
+function decal(txt,w,h,x,y,z,rot=0,bg='#f1f4e9',fg='#163b30') {const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,128);ctx.fillStyle=fg;ctx.textAlign='center';ctx.font='bold 77px Arial';ctx.fillText(txt,256,91);const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide,transparent:false}));m.position.set(x,y,z);m.rotation.y=rot;group.add(m);return m}
+decal('ALASG',3.4,.78,0,4.15,6.13,0,'#2d795a','#f9d16b');
+decal('ALASG',3.3,.8,2.55,4.7,3.9,Math.PI/2,'#2d795a','#f9d16b');
+decal('ALASG',3.3,.8,-2.55,4.7,3.9,-Math.PI/2,'#2d795a','#f9d16b');
+decal('CAV-'+n,2.7,.5,0,2.1,6.54,0,'#f5f5ed','#151515');
+decal('CAV-'+n,2.5,.5,0,3.2,-19.72,Math.PI,'#f5f5ed','#151515');
+// Para-brisa dividido, faróis, espelhos e teto aerodinâmico.
+box(.1,2,.17,black,0,5.15,6.17,group);for(const side of [-1,1]){box(.7,.32,.12,white,side*1.7,2.3,6.52,group);box(.7,.18,.12,gold,side*1.7,2.08,6.54,group);box(.7,1.4,.17,black,side*2.83,4.8,5.3,group);box(.95,.8,.18,glass,side*2.78,5.35,4.95,group);box(.18,1.5,.18,black,side*2.6,5.6,5.25,group)}
+// Detalhes adicionais de cabine, conjunto rodoviário e implemento
+const darkTrim=mat(0x182d30),silver=mat(0xa9b3b5,.65),red=mat(0xa82929);
+for(let side of [-1,1]){
+ box(.1,1.6,2.2,glass,side*2.53,5.15,3.5,group);
+ box(.18,2.0,.16,silver,side*2.58,4.95,2.35,group);
+ box(.6,.22,2.1,darkTrim,side*2.55,2.55,3.8,group);
+ box(.18,2.2,.2,silver,side*2.55,4.1,5.7,group);
+ box(.24,.3,.25,red,side*2.35,3.2,-19.5,group);
+ for(let zz of [-18,-16,-14,-12,-10,-8])box(.13,.14,.55,gold,side*2.78,2.55,zz,group);
+}
+box(4.6,.3,2.8,green,0,7.15,3.35,group);
+box(3.9,.14,.4,gold,0,7.33,4.5,group);
+box(4.9,.17,.8,silver,0,2.45,6.1,group);
+box(4.7,.15,.14,darkTrim,0,5.7,6.18,group);
+for(let xx of [-1.2,0,1.2])box(.13,.65,.1,silver,xx,3.3,6.42,group);
+const brandPalette={Scania:0x356e58,Volvo:0x4c9c85,Mercedes:0x7b8e8c};
+const brandMaterial=mat(brandPalette[brand]||0x4c9c85,.5);
+if(brand==='Scania'){
+ box(4.6,.42,.35,brandMaterial,0,6.45,6.17,group);
+ for(let h of [3.3,3.75,4.2])box(3.7,.14,.18,silver,0,h,6.46,group);
+ box(1.4,.4,.2,gold,0,4.7,6.47,group);
+}else if(brand==='Volvo'){
+ box(4.3,.22,.3,brandMaterial,0,5.9,6.2,group);
+ box(.19,1.75,.22,silver,-.72,3.75,6.46,group);
+ box(.19,1.75,.22,silver,.72,3.75,6.46,group);
+ box(3.8,.22,.2,silver,0,4.15,6.46,group);
+}else{
+ box(4.2,1.3,.25,darkTrim,0,3.9,6.43,group);
+ for(let a=0;a<6;a++){let angle=a*Math.PI/3;box(.13,.85,.15,silver,Math.cos(angle)*.64,3.95+Math.sin(angle)*.64,6.61,group);}
+ box(.45,.45,.15,silver,0,3.95,6.64,group);
+}
+decal(brand.toUpperCase(),3.3,.47,0,5.55,6.43,0,'#18372f','#fff4d1');
+// Detalhamento adicional de componentes de caminhão: degraus, tanque, para-lamas e rodagem.
+const tireSide=mat(0x1b2022),metal=mat(0x8d9699,.6),lamp=mat(0xffd7a3);
+for(let side of [-1,1]){
+ for(let z of [-3.8,-1.1,4.3]){
+  let hub=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.61,16),metal);hub.rotation.z=Math.PI/2;hub.position.set(side*2.98,1.2,z);group.add(hub);
+  for(let a=0;a<6;a++){const ang=a*Math.PI/3;let bolt=new THREE.Mesh(new THREE.SphereGeometry(.065,6,5),black);bolt.position.set(side*3.3,1.2+Math.cos(ang)*.29,z+Math.sin(ang)*.29);group.add(bolt);}
+ }
+ box(.75,.18,2.3,metal,side*2.35,2.05,3.1,group);
+ box(.75,.18,2.1,black,side*2.35,1.85,3.1,group);
+ box(.85,1.15,2.7,metal,side*2.3,2.0,-3.2,group);
+ box(.4,.3,.22,lamp,side*2.1,2.5,6.46,group);
+ box(.5,.16,1.6,black,side*2.5,3.15,3.9,group);
+}
+box(3.9,.18,.22,metal,0,2.6,6.62,group);
+for(let x of [-1.75,1.75])box(.16,1.6,.18,metal,x,5.15,6.15,group);
+group.userData.brand=brand;
+return group}
+const trucks=[];for(let i=0;i<12;i++){let mesh=truck(-100+(i%6)*19,25-Math.floor(i/6)*36,i);trucks.push({mesh,brand:mesh.userData.brand,id:String(i+1).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:Math.floor(95000+i*12000),trip:0,earnings:0,fuel:55,health:90,tires:85,needs:'',homeX:mesh.position.x,homeZ:mesh.position.z})}
+// Trees and boundary
+const perimeterTrees=[];function perimeterTree(x,z){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.42,5,mat(0x66503b),0,2.5,0,g);for(let [dx,dy,dz,r] of [[0,7,0,3.2],[-1.8,6.7,0,2.5],[1.5,7.4,.6,2.5]]){let crown=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),mat(0x487a40));crown.position.set(dx,dy,dz);g.add(crown)}perimeterTrees.push(g)}
+for(let x=-140;x<=140;x+=15){for(let z of [-151,135]){perimeterTree(x,z)}}for(let z=-140;z<=130;z+=15)for(let x of [-140,140]){perimeterTree(x,z)}
+let pos=new THREE.Vector3(0,5,130),yaw=0,pitch=-.13,keys=new Set(),drag=false,lastX=0,lastY=0;function reset(){pos.set(0,5,130);yaw=0;pitch=-.13}document.getElementById('reset').onclick=reset;addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY});addEventListener('pointerup',()=>drag=false);addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-lastX)*.004;pitch=Math.max(-1.1,Math.min(.65,pitch-(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY});for(let b of document.querySelectorAll('[data-m]')){b.addEventListener('pointerdown',e=>{e.preventDefault();keys.add(b.dataset.m);b.setPointerCapture(e.pointerId)});b.addEventListener('pointerup',()=>keys.delete(b.dataset.m));b.addEventListener('pointercancel',()=>keys.delete(b.dataset.m))}// Controles por toque: joystick analógico à esquerda, câmera à direita.
+let touchForward=0,touchSide=0,touchSprint=false;
+const pad=document.getElementById('touchPad'),knob=document.getElementById('touchKnob'),look=document.getElementById('touchLook'),run=document.getElementById('touchRun');
+let padPointer=null,lookPointer=null,lookX=0,lookY=0;
+function updatePad(e){const r=pad.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+const dx=e.clientX-cx,dy=e.clientY-cy,max=49,scale=Math.min(1,max/Math.max(1,Math.hypot(dx,dy)));
+const x=dx*scale,y=dy*scale;touchSide=x/max;touchForward=-y/max;knob.style.transform=`translate(${x}px,${y}px)`;}
+pad.addEventListener('pointerdown',e=>{e.preventDefault();padPointer=e.pointerId;pad.setPointerCapture(e.pointerId);updatePad(e)});
+pad.addEventListener('pointermove',e=>{if(e.pointerId===padPointer)updatePad(e)});
+function releasePad(e){if(e.pointerId!==padPointer)return;padPointer=null;touchSide=0;touchForward=0;knob.style.transform='translate(0px,0px)'}
+pad.addEventListener('pointerup',releasePad);pad.addEventListener('pointercancel',releasePad);
+look.addEventListener('pointerdown',e=>{lookPointer=e.pointerId;lookX=e.clientX;lookY=e.clientY;look.setPointerCapture(e.pointerId)});
+look.addEventListener('pointermove',e=>{if(e.pointerId!==lookPointer)return;yaw-=(e.clientX-lookX)*.006;pitch=Math.max(-1.1,Math.min(.65,pitch-(e.clientY-lookY)*.006));lookX=e.clientX;lookY=e.clientY});
+look.addEventListener('pointerup',e=>{if(e.pointerId===lookPointer)lookPointer=null});look.addEventListener('pointercancel',e=>{if(e.pointerId===lookPointer)lookPointer=null});
+run.addEventListener('pointerdown',e=>{e.preventDefault();touchSprint=true;run.setPointerCapture(e.pointerId)});
+run.addEventListener('pointerup',()=>touchSprint=false);run.addEventListener('pointercancel',()=>touchSprint=false);
+renderer.domElement.addEventListener('wheel',e=>{pos.y=Math.max(3,Math.min(45,pos.y+e.deltaY*.02))},{passive:true});
+// Operação logística em tempo real — veículos e pessoas animados
+const people=[];const skin=mat(0xc78f69),uniform=mat(0x367f63),pants=mat(0x263b42),helmet=mat(0xe1bd4b);
+function worker(x,z,role,i){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.36,1.5,pants,0,1,0,g);box(1.1,1.35,.65,uniform,0,2.35,0,g);
+box(.24,1.25,.25,skin,-.72,2.32,0,g);box(.24,1.25,.25,skin,.72,2.32,0,g);
+box(.28,1.3,.32,pants,-.25,.65,0,g);box(.28,1.3,.32,pants,.25,.65,0,g);const head=new THREE.Mesh(new THREE.SphereGeometry(.42,12,9),skin);head.position.set(0,3.23,0);g.add(head);if(role==='Mecânico'||role==='Abastecedor')cyl(.44,.16,helmet,0,3.65,0,g);box(.17,1,.17,skin,-.69,2.35,0,g);box(.17,1,.17,skin,.69,2.35,0,g);box(.7,.14,.2,black,0,3.05,.39,g);box(.65,.12,.08,gold,0,2.6,.37,g);const hair=mat(0x292523),reflect=mat(0xe8c95d),boot=mat(0x20252a);
+box(.7,.13,.6,hair,0,3.6,0,g);
+const skinTones=[0xc78f69,0x996746,0xe0ad86,0x704c39],face=mat(skinTones[i%4]),eye=mat(0x171c20);
+head.material=face;
+for(const side of [-1,1]){
+box(.06,.065,.04,eye,side*.16,3.3,.4,g);
+box(.14,.09,.1,face,side*.44,3.21,0,g);
+box(.25,.23,.28,uniform,side*.61,2.83,0,g);
+}
+box(.19,.045,.05,mat(0x784e45),0,3.06,.42,g);
+if(role==='Mecânico'||role==='Borracheiro')box(.65,.09,.6,mat(0xd6a642),0,2.47,.36,g);
+if(role==='Segurança')box(.85,.65,.1,mat(0x202d35),0,2.45,.36,g);
+if(role==='Administrativo'||role==='Controlador de frota')box(.18,.58,.1,mat(0xe3e5e2),0,2.4,.39,g);
+for(let side of [-1,1]){box(.29,.19,.54,boot,side*.25,.12,.13,g);box(.12,.12,.07,black,side*.17,3.3,.41,g);}
+box(.75,.1,.68,reflect,0,2.65,.03,g);
+box(.68,.1,.68,reflect,0,2.05,.03,g);
+people.push({g,role,i,baseX:x,baseZ:z,phase:i*1.4,walkX:x,walkZ:z,goalX:x,goalZ:z,nextGoal:0,walkSpeed:role==='Motorista'?1.9:1.25});return g}
+for(let i=0;i<12;i++)worker(i<4?45+i*9:i<8?-65+(i-4)*12:i<10?-90+(i-8)*9:-18+(i-10)*12,i<4?-40:i<8?-46:i<10?66:88,i<4?'Mecânico':i<8?'Abastecedor':i<10?'Administrativo':'Motorista',i);
+// GLB animado comprovado no teste isolado. Personagem demonstrativo, ainda não é Pete.
+const glbStatus=document.createElement('div');glbStatus.id='glbStatus';glbStatus.style.cssText='position:absolute;left:10px;bottom:10px;z-index:15;background:#103a32eb;color:#baffd7;border:1px solid #6dbb92;border-radius:9px;padding:8px;font-size:11px;max-width:240px';glbStatus.textContent='👷 Carregando funcionários humanos GLB…';document.body.appendChild(glbStatus);
+const glbMixers=[];let realStaff=0;
+new GLTFLoader().load('https://threejs.org/examples/models/gltf/Soldier.glb',gltf=>{
+ const clip=gltf.animations.find(a=>/walk/i.test(a.name))||gltf.animations[0];
+ for(const [i,person] of people.entries()){
+  // Usar poucos modelos inicialmente para manter a experiência leve.
+  if(i>=6)break;
+  const human=cloneSkeleton(gltf.scene);
+  // Dimensionar pela caixa real do modelo, não pela escala original do arquivo.
+  human.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(human);
+  const height=bounds.max.y-bounds.min.y;
+  if(!Number.isFinite(height)||height<=0.001){console.warn('GLB sem altura válida',height);continue;}
+  const scale=3.25/height;
+  human.scale.multiplyScalar(scale);
+  human.position.y=-bounds.min.y*scale;
+  human.rotation.y=Math.PI;
+  person.g.add(human);
+  // Ocultar somente os corpos geométricos antigos; manter o grupo e a animação de deslocamento.
+  for(const child of [...person.g.children])if(child!==human)child.visible=false;
+  if(clip){const mixer=new THREE.AnimationMixer(human);mixer.clipAction(clip).play();human.userData.humanMixer=mixer;glbMixers.push(mixer)}
+  realStaff++;
+ }
+ glbStatus.textContent='✓ '+realStaff+' funcionários 3D carregados em escala humana (modelo demonstrativo).';
+},undefined,err=>{console.error(err);glbStatus.textContent='⚠️ GLB não carregou; personagens simplificados mantidos.'});
+const roles=['Motorista','Mecânico','Borracheiro','Abastecedor','Administrativo','Controlador de frota','Segurança','Limpeza'];
+const roleSalary={'Motorista':5500,'Mecânico':4200,'Borracheiro':3600,'Abastecedor':3000,'Administrativo':3500,'Controlador de frota':5500,'Segurança':4200,'Limpeza':2300};
+const staffRoles={'Motorista':14,'Mecânico':6,'Borracheiro':3,'Abastecedor':4,'Administrativo':5,'Controlador de frota':1,'Segurança':3,'Limpeza':2};
+let saleConfirmation=null;let expansionLots=[];let sideExpansions=0,rearExpansions=0;let shift=1,paused=false,clockSim=0,simMinutes=8*60,speedMultiplier=1,autoRicardo=false,finance=50000000,employeeCount=38,expansion=0,nextTruckId=13,tireJobs=0,log=['Turno 1: transportadora aberta.','12 conjuntos posicionados no pátio.'],totalRevenue=0,totalKm=0;
+function record(m){log.unshift(m);log=log.slice(0,9);document.getElementById('toast').textContent=m;drawPanel()}
+function fmtTime(minutes){const v=Math.floor(minutes)%1440;return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}
+function drawPanel(){let inYard=trucks.filter(t=>t.status==='Pátio').length,travel=trucks.filter(t=>t.status==='Viagem').length,returning=trucks.filter(t=>t.status==='Retornando').length,leaving=trucks.filter(t=>t.status==='Saindo'||t.status==='Entrando').length;
+document.getElementById('stats').innerHTML=`<div class="line"><span>📅 Turno / hora simulada</span><b>${shift} • ${fmtTime(simMinutes)}</b></div><div class="line"><span>🚛 Pátio / estrada / acesso</span><b>${inYard} / ${travel} / ${leaving}</b></div><div class="line"><span>📏 Km concluídos</span><b>${totalKm.toLocaleString('pt-BR')}</b></div><div class="line"><span>💰 Fretes concluídos</span><b>R$ ${totalRevenue.toLocaleString('pt-BR')}</b></div><small>1 segundo real = 1 minuto no jogo. Uma viagem de 6h leva 6 minutos reais em 1×. Caminhões fora da sede ficam ocultos, não atravessam o mapa.</small>`;
+document.getElementById('fleet').innerHTML=trucks.map(t=>`<div class="line"><span><b>${t.brand||'Scania'} • CAV-${t.id}</b><br><small>${t.status} • ${t.km.toLocaleString('pt-BR')} km<br>⛽ ${Math.round(t.fuel)}% • 🔧 ${Math.round(t.health)}% • 🛞 ${Math.round(t.tires)}%</small></span><span><b>R$ ${Math.round(resaleValue(t)).toLocaleString('pt-BR')}</b><br><button data-sell="${t.id}" ${t.pendingSale?'':''}>${t.pendingSale?'❎ Cancelar venda':t.status==='Pátio'?'💵 Vender agora':'📋 Vender no retorno'}</button></span></div>`).join('');document.getElementById('tires').innerHTML=`<div class="line"><b>🛞 BORRACHARIA ALASG</b><b>${tireJobs} serviços</b></div><small>Troca e reparo de pneus: R$ 3.600 por serviço. Caminhões com pneus abaixo de 35% entram automaticamente após o retorno, seguindo o acesso interno e voltam à vaga após a troca.</small><div class="line"><span>Caminhões na borracharia</span><b>${trucks.filter(t=>t.status==='Borracharia'||t.status==='Indo à borracharia').length}</b></div>`+trucks.filter(t=>t.status==='Pátio'&&t.tires<65).map(t=>`<div class="line"><span>CAV-${t.id} • pneus ${Math.round(t.tires)}%</span><button data-tire="${t.id}">Enviar para troca</button></div>`).join('');document.getElementById('truckcount').textContent=trucks.length;document.getElementById('cash').textContent='R$ '+Math.round(finance).toLocaleString('pt-BR');document.getElementById('management').innerHTML=`<div class="line"><span>Caixa operacional</span><b>R$ ${finance.toLocaleString('pt-BR')}</b></div><div class="line"><span>Funcionários contratados</span><b>${employeeCount}</b></div><div class="line"><span>Ricardo • despacho automático</span><b>${autoRicardo?'ATIVO':'DESLIGADO'}</b></div><button id="ricardo">🤖 ${autoRicardo?'Desligar':'Ativar'} Ricardo</button><button id="hire">👷 Contratar (+R$ 4.000/mês)</button><button id="buy">🚛 Comprar caminhão (R$ 715 mil)</button><button id="expand">➡️ Expandir para o lado (R$ 1,5 mi)</button><button id="expandRear">⬆️ Expandir para trás (R$ 1,5 mi)</button><button id="visitExpand">📍 Visitar expansão</button><small>Expansões: ${expansion} (lado ${sideExpansions}, fundos ${rearExpansions}) • Área adicionada: ${Math.round(sideExpansions*65*270+rearExpansions*75*(240+sideExpansions*65))} m² • Caminhões passam pelo posto e oficina quando necessário, antes de estacionar.</small>`;document.getElementById('people').innerHTML='<div class="line"><b>👷 QUADRO DE FUNCIONÁRIOS</b><b>'+employeeCount+' pessoas</b></div><small>Escolha o cargo antes de contratar. Motoristas conduzem, mecânicos reparam, borracheiros cuidam dos pneus, abastecedores atendem o posto e Ricardo controla despachos.</small>'+roles.map(role=>'<div class="line"><span><b>'+role+'</b><br><small>'+staffRoles[role]+' contratado(s) • R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês por pessoa</small></span><span style="display:flex;gap:3px;flex-wrap:wrap"><button data-hire-role="'+role+'">+ Contratar</button><button data-pay-down="'+role+'">− R$ 100</button><button data-pay-up="'+role+'">+ R$ 100</button></span></div>').join('');document.getElementById('history').innerHTML=log.map(l=>'<div class="line">'+l+'</div>').join('')}
+// Rotas com curvas dentro do pátio: vaga -> corredor central -> acesso da portaria.
+// Orientação do caminhão usa a tangente do trecho, não uma translação reta.
+const gateOut={x:-8,z:130},gateIn={x:8,z:130};
+function routeFor(t,returning){const laneZ=t.homeZ+18;const out=[{x:t.homeX,z:t.homeZ},{x:t.homeX,z:laneZ},{x:0,z:laneZ},{x:-8,z:100},gateOut,{x:-8,z:151}];const inbound=[{x:8,z:151},gateIn,{x:8,z:100},{x:8,z:laneZ},{x:t.homeX,z:laneZ},{x:t.homeX,z:t.homeZ}];return returning?inbound:out}
+function beginRoute(t,returning){t.status=returning?'Entrando':'Saindo';t.route=routeFor(t,returning);t.routeIndex=0;t.mesh.visible=true;t.mesh.position.set(t.route[0].x,0,t.route[0].z);}
+function moveRoute(t,dt){let remaining=dt*7;while(remaining>0&&t.routeIndex<t.route.length-1){let a=t.route[t.routeIndex],b=t.route[t.routeIndex+1],dx=b.x-t.mesh.position.x,dz=b.z-t.mesh.position.z,dist=Math.hypot(dx,dz);if(dist<.01){t.routeIndex++;continue}let step=Math.min(dist,remaining);t.mesh.position.x+=dx/dist*step;t.mesh.position.z+=dz/dist*step;t.mesh.rotation.y=Math.atan2(dx,dz);remaining-=step;if(step>=dist-.001)t.routeIndex++}return t.routeIndex>=t.route.length-1}
+function dispatch(){let t=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35);if(!t)return record('Sem caminhão liberado: verifique combustível e manutenção.');t.trip++;t.duration=240+((Number(t.id)*43+t.trip*71)%480);t.returnAt=simMinutes+t.duration;t.plannedKm=320+((t.trip*71+Number(t.id)*13)%410);beginRoute(t,false);record('CAV-'+t.id+' despachado. Duração '+Math.floor(t.duration/60)+'h'+String(t.duration%60).padStart(2,'0')+' • retorno previsto '+fmtTime(t.returnAt)+'.')}
+document.getElementById('menuBtn').onclick=()=>{const m=document.getElementById('menu');m.hidden=!m.hidden;document.getElementById('ops').style.visibility=m.hidden?'visible':'hidden';};document.getElementById('menuClose').onclick=()=>{document.getElementById('menu').hidden=true;document.getElementById('ops').style.visibility='visible';};
+document.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{const id=b.dataset.panel;const ops=document.getElementById('ops');ops.open=true;for(const k of ['fleet','tires','people','management','history'])document.getElementById(k).hidden=k!==id;document.getElementById('menu').hidden=true;ops.style.visibility='visible';ops.scrollTop=0;drawPanel();});
+function resaleValue(t){return Math.max(170000,Math.round(715000*(1-Math.min(t.km,800000)/1100000)*(.72+.28*Math.min(t.health,t.tires)/100)))}
+function sellTruck(t){const price=resaleValue(t);finance+=price;scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1);record('CAV-'+t.id+' vendido por R$ '+price.toLocaleString('pt-BR')+'. Valor creditado no caixa.');}
+function beginServiceRoute(t,kind){const target=serviceTargets[kind];t.serviceKind=kind;t.status='Indo ao serviço';t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:8,z:t.mesh.position.z+18},{x:8,z:-18},{x:target.x,z:-18},{x:target.x,z:target.z}];t.routeIndex=0;t.mesh.visible=true;record('CAV-'+t.id+' seguindo para '+kind.toLowerCase()+'.')}
+function finishService(t){let kind=t.status;if(kind==='Abastecendo'){t.fuel=100;finance-=2200}else if(kind==='Manutenção'){t.health=100;finance-=4500}else if(kind==='Borracharia'){t.tires=100;finance-=3600;tireJobs++}t.status='Estacionando';t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.mesh.position.x,z:-18},{x:8,z:-18},{x:8,z:t.homeZ+18},{x:t.homeX,z:t.homeZ+18},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;record('CAV-'+t.id+' concluiu '+kind.toLowerCase()+' e retorna à vaga.')}
+
+// Editor de implantação: move objetos reais no cenário e atualiza destinos de serviços.
+const mapEditor=document.getElementById('mapEditor'),mapSvg=document.getElementById('siteMap');
+let selectedId=null,dragFacility=null,preview=null;
+const sx=x=>340+x*1.5,sz=z=>240+z*1.4,wx=x=>(x-340)/1.5,wz=z=>(z-240)/1.4;
+function mapDraw(){
+ const mapWidth=Math.max(680,Math.ceil(sx(112+sideExpansions*65)+65));
+ mapSvg.setAttribute('viewBox',`0 ${rearExpansions?-rearExpansions*105:0} ${mapWidth} ${480+rearExpansions*105}`);
+ const ext=(sideExpansions?`<rect x="${sx(110)}" y="${sz(-140)}" width="${sideExpansions*97.5+12}" height="378" fill="#414e4b" stroke="#a3bbb0" stroke-width="1"/>`:'')+(rearExpansions?`<rect x="${sx(-120)}" y="${sz(-140-rearExpansions*75)}" width="${360+sideExpansions*97.5+12}" height="${rearExpansions*105}" fill="#414e4b" stroke="#a3bbb0" stroke-width="1"/>`:'');
+ mapSvg.innerHTML=`<rect x="${sx(-120)}" y="${sz(-140)}" width="360" height="378" fill="#414e4b" stroke="#e6ede8" stroke-width="3"/>${ext}<rect x="${sx(107)}" y="${sz(-112)}" width="${expansion?30:0}" height="305" fill="#515b56"/><rect x="${sx(-10)}" y="42" width="30" height="378" fill="#6d7a74"/><path d="M 315 42 V420" stroke="#f5c963" stroke-width="2" stroke-dasharray="12 12"/><text x="290" y="455">ENTRADA / PORTARIA</text>`+
+ Object.values(facilities).map(f=>{let a=preview&&selectedId===f.id?preview:f;return `<g transform="translate(${sx(a.x)},${sz(a.z)}) rotate(${f.rotation*180/Math.PI})"><rect class="facility ${selectedId===f.id?'active':''}" data-f="${f.id}" x="${-f.w*.75}" y="${-f.d*.7}" width="${f.w*1.5}" height="${f.d*1.4}" rx="5" fill="${f.id==='fuel'?'#a27d36':f.id==='workshop'?'#386b70':f.id==='tires'?'#7a6141':'#2b6953'}"/><text x="0" y="4" text-anchor="middle">${f.name}</text></g>`}).join('');
+}
+function selectFacility(id){selectedId=id;preview=null;mapDraw();let f=facilities[id];document.getElementById('selectedFacility').textContent=f.name;detailsFacility()}
+function detailsFacility(){if(!selectedId)return;let f=facilities[selectedId],a=preview||f;document.getElementById('facilityDetails').innerHTML=`Posição X: ${a.x.toFixed(0)} / Z: ${a.z.toFixed(0)}<br>Área: ${Math.round(f.w*f.d)} m²<br>Andares: ${f.floors}<br>Rotação: ${Math.round(f.rotation*180/Math.PI)%360}°<br>Melhoria: nível ${f.level}<br>Ampliações: ${f.expanded}`;}
+function pointOnMap(e){const r=mapSvg.getBoundingClientRect();const vb=mapSvg.viewBox.baseVal;return {x:wx((e.clientX-r.left)*vb.width/r.width),z:wz((e.clientY-r.top)*vb.height/r.height)}}
+mapSvg.addEventListener('pointerdown',e=>{let target=e.target.closest('[data-f]');if(!target)return;selectFacility(target.dataset.f);dragFacility=target.dataset.f;mapSvg.setPointerCapture(e.pointerId)});
+mapSvg.addEventListener('pointermove',e=>{if(!dragFacility)return;let pt=pointOnMap(e);let f=facilities[dragFacility];preview={x:Math.max(-111,Math.min(110+sideExpansions*65,Math.round(pt.x/5)*5)),z:Math.max(-140-rearExpansions*75,Math.min(105,Math.round(pt.z/5)*5))};mapDraw();detailsFacility()});
+mapSvg.addEventListener('pointerup',()=>dragFacility=null);
+function facilityCost(cost){if(finance<cost){record('Caixa insuficiente para esta obra: '+cost.toLocaleString('pt-BR')+' reais.');return false}finance-=cost;return true}
+function moveFacility(){if(!selectedId||!preview)return;let f=facilities[selectedId];const px=preview.x,pz=preview.z;if(Object.values(facilities).some(g=>g!==f&&Math.abs(px-g.x)<(f.w+g.w)*.48&&Math.abs(pz-g.z)<(f.d+g.d)*.48)){record('Local ocupado por outra instalação. Escolha uma posição livre.');return}
+if(!facilityCost(75000))return;
+let dx=px-f.x,dz=pz-f.z;f.group.position.x+=dx;f.group.position.z+=dz;f.x=px;f.z=pz;preview=null;
+if(f.id==='fuel'){serviceTargets.Abastecendo={x:px,z:pz};}
+if(f.id==='workshop'){serviceTargets['Manutenção']={x:px,z:pz+f.d*.35};}if(f.id==='tires'){serviceTargets['Borracharia']={x:px,z:pz+f.d*.35};}
+mapDraw();detailsFacility();record(f.name+' transferida no cenário 3D. Custo: R$ 75.000.');}
+const serviceTargets={'Abastecendo':{x:-52,z:-52},'Manutenção':{x:58,z:-42},'Borracharia':{x:82,z:-7}};
+document.getElementById('mapOpen').onclick=()=>{mapEditor.hidden=false;document.getElementById('menu').hidden=true;document.getElementById('ops').style.visibility='hidden';mapDraw()};
+document.getElementById('mapClose').onclick=()=>{mapEditor.hidden=true;document.getElementById('ops').style.visibility='visible'};
+document.getElementById('moveSave').onclick=moveFacility;
+document.getElementById('improveFacility').onclick=()=>{if(!selectedId||!facilityCost(150000))return;let f=facilities[selectedId];f.level++;let upgrade=box(f.w*.85,.45,f.d*.85,gold,f.x,Math.max(12,f.floors*7+6),f.z);f.group.attach(upgrade);f.objects.push(upgrade);detailsFacility();record(f.name+' melhorada para nível '+f.level+'.')};
+document.getElementById('floorFacility').onclick=()=>{if(!selectedId||!facilityCost(350000))return;let f=facilities[selectedId];let height=f.id==='fuel'?7:11;let y=height+(f.floors-1)*7;let b=box(f.w*.88,6.5,f.d*.88,white,f.x,y+3,f.z);let r=box(f.w*.92,.65,f.d*.92,roof,f.x,y+6.5,f.z);f.group.attach(b);f.group.attach(r);f.objects.push(b,r);f.floors++;detailsFacility();record('Novo pavimento construído em '+f.name+'.')};
+document.getElementById('enlargeFacility').onclick=()=>{if(!selectedId||!facilityCost(250000))return;let f=facilities[selectedId];let x=f.w/2+5;let ext=box(10,8,f.d*.85,white,x,4,0,f.group);let top=box(11,.8,f.d*.9,roof,x,8.5,0,f.group);f.objects.push(ext,top);f.additions.push([ext,top]);f.w+=10;f.expanded++;mapDraw();detailsFacility();record(f.name+' ampliada em área construída.')};
+document.getElementById('shrinkFacility').onclick=()=>{if(!selectedId)return;let f=facilities[selectedId];if(!f.additions.length)return record('Esta instalação ainda não tem ampliações para remover.');const parts=f.additions.pop();for(const o of parts){f.group.remove(o);o.geometry.dispose();}f.w-=10;f.expanded--;mapDraw();detailsFacility();record('Última ampliação removida de '+f.name+'. Não há reembolso de obras.');};
+document.getElementById('rotateFacility').onclick=()=>{if(!selectedId)return;let f=facilities[selectedId];if(!facilityCost(25000))return;f.rotation=(f.rotation+Math.PI/2)%(Math.PI*2);f.group.rotation.y=f.rotation;mapDraw();detailsFacility();record(f.name+' girada em 90° no mapa e no cenário 3D.');};
+document.getElementById('visitFacility').onclick=()=>{if(!selectedId)return;let f=facilities[selectedId];pos.set(f.x,12,f.z+f.d*.75);yaw=Math.PI;pitch=-.25;mapEditor.hidden=true;document.getElementById('ops').style.visibility='visible';record('Visitando '+f.name+' no cenário 3D.')};
+
+document.getElementById('dispatch').onclick=dispatch;document.getElementById('ops').addEventListener('click',e=>{let id=e.target.id;let sell=e.target.closest('[data-sell]');if(sell){let t=trucks.find(t=>t.id===sell.dataset.sell);if(!t)return;if(t.pendingSale){saleConfirmation=null;t.pendingSale=false;return record('Venda programada do CAV-'+t.id+' cancelada.');}let price=resaleValue(t);if(t.status!=='Pátio'){saleConfirmation=null;t.pendingSale=true;return record('Venda do CAV-'+t.id+' agendada para o retorno. Ricardo não fará novo despacho deste veículo.');}saleConfirmation=null;return sellTruck(t);}let tire=e.target.closest('[data-tire]');if(tire){let t=trucks.find(t=>t.id===tire.dataset.tire);if(!t||t.status!=='Pátio')return;return beginServiceRoute(t,'Borracharia');}if(id==='ricardo'){autoRicardo=!autoRicardo;record('Ricardo: despacho automático '+(autoRicardo?'ativado':'desativado')+'.');}if(id==='hire'){record('Selecione o cargo em Menu ALASG → Funcionários para contratar.')}let hireRole=e.target.closest('[data-hire-role]');if(hireRole){let role=hireRole.dataset.hireRole;staffRoles[role]++;employeeCount++;let f=facilities[role==='Mecânico'?'workshop':role==='Borracheiro'?'tires':role==='Abastecedor'?'fuel':'admin'];worker(f.x+(employeeCount%4)*3,f.z+f.d/2+4,role,people.length);record('Contratado: '+role+' • R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês.');}let payUp=e.target.closest('[data-pay-up]'),payDown=e.target.closest('[data-pay-down]');
+if(payUp||payDown){const role=(payUp||payDown).dataset[payUp?'payUp':'payDown'];const delta=payUp?100:-100;const minimum=1518;if(roleSalary[role]+delta<minimum)return record('Salário não pode ficar abaixo do piso mínimo de referência de R$ '+minimum.toLocaleString('pt-BR')+'.');roleSalary[role]+=delta;return record('Salário de '+role+' atualizado para R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês. Impacto mensal na folha: R$ '+(delta*staffRoles[role]).toLocaleString('pt-BR')+'.');}
+if(id==='buy'){if(finance<715000)return record('Caixa insuficiente para a compra.');finance-=715000;let i=nextTruckId++-1,mesh=truck(i<12?-100+(i%6)*19:-117+((i-12)%3)*13,i<12?25-Math.floor(i/6)*36:-15-Math.floor((i-12)/3)*27,i);trucks.push({mesh,brand:mesh.userData.brand,id:String(i+1).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:0,trip:0,earnings:0,fuel:100,health:100,tires:100,needs:'',homeX:mesh.position.x,homeZ:mesh.position.z});record('Novo caminhão CAV-'+String(i+1).padStart(4,'0')+' comprado.');}if(id==='visitExpand'){if(!expansion)return record('Ainda não há expansão.');if(rearExpansions){pos.set(0,6,-140-(rearExpansions-1)*75-37);yaw=0;pitch=-.2;}else{pos.set(145+(sideExpansions-1)*65,6,10);yaw=0;pitch=-.2;}document.getElementById('ops').open=false;return record('Visitando o pátio expandido.');}
+if(id==='expand'||id==='expandRear'){if(finance<1500000)return record('Caixa insuficiente para expansão.');finance-=1500000;expansion++;
+if(id==='expand'){sideExpansions++;const cx=145+(sideExpansions-1)*65;
+expansionLots.push(box(66,.14,270,asphalt,cx,-.12,-5));
+box(25,.14,270,asphalt,115,-.12,-5);
+for(let zz=-128;zz<119;zz+=23)for(let xx of [cx-22,cx+22]){box(.22,.025,14,white,xx,-.03,zz);box(15,.025,.2,white,xx,-.03,zz+8);}
+pos.set(cx,6,10);record('Expansão lateral '+sideExpansions+' construída e integrada ao pátio.');}
+else{rearExpansions++;const z=-140-(rearExpansions-1)*75-37.5;const width=240+sideExpansions*65;const cx=sideExpansions*65/2;
+expansionLots.push(box(width,.14,75,asphalt,cx,-.12,z));
+box(width,.14,16,asphalt,cx,-.12,z+45);
+for(let xx=-105;xx<110+sideExpansions*65;xx+=23)for(let zz of [z-20,z+20]){box(14,.025,.22,white,xx,-.03,zz);box(.2,.025,14,white,xx+8,-.03,zz);}
+pos.set(0,6,z);record('Expansão dos fundos '+rearExpansions+' construída e integrada ao pátio.');}
+for(const tree of perimeterTrees){const x=tree.position.x,z=tree.position.z;if((sideExpansions>0&&x>=100&&x<=112+sideExpansions*65&&z>=-143&&z<=135)||(rearExpansions>0&&z>=-140-rearExpansions*75&&z<=-120&&x>=-120&&x<=120+sideExpansions*65))tree.visible=false;}
+yaw=0;pitch=-.2;mapDraw();
+}});
+document.getElementById('auto').onclick=()=>{paused=!paused;document.getElementById('auto').textContent=paused?'▶ Retomar movimento':'⏯ Pausar movimento';record(paused?'Operações pausadas.':'Operações retomadas.')};
+document.getElementById('speed').onclick=()=>{speedMultiplier=speedMultiplier===1?2:speedMultiplier===2?4:1;document.getElementById('speed').textContent='🕒 Tempo '+speedMultiplier+'×';record('Velocidade do relógio alterada para '+speedMultiplier+'×.')};
+document.getElementById('shift').onclick=()=>{shift++;simMinutes+=480;record('Turno '+shift+' iniciado; relógio avançou 8 horas. Viagens em andamento respeitam o novo horário.')};
+function updateWorld(dt,elapsed){
+for(const p of people){
+ if(elapsed>=p.nextGoal){
+  // Funcionários circulam por seus setores, em vez de caminhar no mesmo ponto.
+  const radius=p.role==='Motorista'?20:13;
+  p.goalX=p.baseX+(Math.random()-.5)*radius*2;
+  p.goalZ=p.baseZ+(Math.random()-.5)*radius*2;
+  p.nextGoal=elapsed+9+Math.random()*10;
+ }
+ const dx=p.goalX-p.g.position.x,dz=p.goalZ-p.g.position.z,dist=Math.hypot(dx,dz);
+ if(dist>.35){
+  const step=Math.min(dist,p.walkSpeed*dt);
+  p.g.position.x+=dx/dist*step;p.g.position.z+=dz/dist*step;
+  p.g.rotation.y=Math.atan2(dx,dz);
+  p.moving=true;
+ }else{p.moving=false;p.nextGoal=Math.min(p.nextGoal,elapsed+.6);}
+ for(const child of p.g.children)if(child.userData?.humanMixer){child.userData.humanMixer.timeScale=p.moving?1:0;}
+}
+if(paused)return;
+simMinutes+=dt*speedMultiplier;clockSim+=dt;for(const t of trucks){if(t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'){t.serviceLeft-=dt*speedMultiplier;if(t.serviceLeft<=0)finishService(t);continue;}if(t.status==='Indo ao serviço'){if(moveRoute(t,dt)){t.status=t.serviceKind;t.serviceLeft=t.status==='Abastecendo'?25:t.status==='Borracharia'?55:80;record('CAV-'+t.id+' chegou à '+t.status.toLowerCase()+'.');}continue;}if(t.status==='Estacionando'){if(moveRoute(t,dt)){t.status='Pátio';t.mesh.rotation.y=0;if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35)beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');else record('CAV-'+t.id+' estacionado na vaga.');}continue;}if(t.status==='Pátio')continue;if(t.status==='Saindo'){if(moveRoute(t,dt)){t.status='Viagem';t.mesh.visible=false;record('CAV-'+t.id+' cruzou a portaria e entrou na estrada. Previsão '+fmtTime(t.returnAt)+'.')}}else if(t.status==='Viagem'){if(simMinutes>=t.returnAt){beginRoute(t,true);record('CAV-'+t.id+' chegou à portaria e está entrando no pátio.')}}else if(t.status==='Entrando'){if(moveRoute(t,dt)){t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=0;t.status='Pátio';const km=t.plannedKm,revenue=km*8;t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35){beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');}else record('CAV-'+t.id+' estacionou após '+km+' km. Fretes ida/volta: R$ '+revenue.toLocaleString('pt-BR')+'.')}}}
+if(autoRicardo&&Math.floor(simMinutes/45)!==Math.floor((simMinutes-dt*speedMultiplier)/45)&&trucks.some(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35))dispatch();if(clockSim>2){clockSim=0;drawPanel();saveGame()}}
+
+// ALASG V18: salvamento local e simulação de tempo decorrido entre sessões.
+// Navegadores suspendem JavaScript com a página fechada: os eventos são calculados ao voltar.
+const SAVE_KEY='alasg_v18_company_state';
+const OFFLINE_LIMIT_SECONDS=12*3600;
+let lastSave=Date.now(),restoring=false;
+function snapshot(){
+ return {
+  version:18,savedAt:Date.now(),finance,simMinutes,shift,speedMultiplier,paused,autoRicardo,
+  employeeCount,roleSalary:{...roleSalary},staffRoles:{...staffRoles},
+  sideExpansions,rearExpansions,nextTruckId,tireJobs,totalRevenue,totalKm,log:[...log],
+  camera:{x:pos.x,y:pos.y,z:pos.z,yaw,pitch},
+  trucks:trucks.map(t=>({
+   id:t.id,brand:t.brand,status:t.status,km:t.km,trip:t.trip,earnings:t.earnings,
+   fuel:t.fuel,health:t.health,tires:t.tires,homeX:t.homeX,homeZ:t.homeZ,
+   duration:t.duration,returnAt:t.returnAt,plannedKm:t.plannedKm,
+   pendingSale:!!t.pendingSale,serviceLeft:t.serviceLeft,serviceKind:t.serviceKind
+  }))
+ };
+}
+function saveGame(){
+ if(restoring)return;
+ try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));lastSave=Date.now();return true}
+ catch(e){console.warn('Salvamento indisponível:',e);return false}
+}
+function completeOfflineTrip(t){
+ const km=t.plannedKm||320,revenue=km*8;
+ t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;
+ t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);
+ t.status='Pátio';t.mesh.visible=true;t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=0;
+ if(t.pendingSale){sellTruck(t);return}
+ if(t.fuel<35){finance-=2200;t.fuel=100}
+ if(t.health<45){finance-=4500;t.health=100}
+ if(t.tires<35){finance-=3600;t.tires=100;tireJobs++}
+}
+function simulateAway(seconds){
+ if(paused||seconds<=0)return 0;
+ const simDelta=seconds*speedMultiplier,finish=simMinutes+simDelta;
+ // Process active journeys first, then scheduled automatic departures in chronological order.
+ let events=0;
+ for(const t of [...trucks]){
+  if(t.status==='Viagem'||t.status==='Saindo'||t.status==='Entrando'){
+   if((t.returnAt||simMinutes)<=finish){completeOfflineTrip(t);events++}
+   else {t.status='Viagem';t.mesh.visible=false}
+  }else if(t.status==='Indo ao serviço'||t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'||t.status==='Estacionando'){
+   t.status='Pátio';t.mesh.visible=true;t.mesh.position.set(t.homeX,0,t.homeZ);
+   if(t.serviceKind==='Abastecendo'||t.fuel<35){finance-=2200;t.fuel=100}
+   if(t.serviceKind==='Manutenção'||t.health<45){finance-=4500;t.health=100}
+   if(t.serviceKind==='Borracharia'||t.tires<35){finance-=3600;t.tires=100;tireJobs++}
+   if(t.pendingSale)sellTruck(t);
+  }
+ }
+ if(autoRicardo){
+  // Event-based approximation: a dispatch every 45 simulated minutes, with a per-truck return.
+  const start=simMinutes,first=Math.ceil(start/45)*45;
+  const freeAt=new Map(trucks.map(t=>[t,t.status==='Viagem'?(t.returnAt||finish+1):start]));
+  for(let departure=first;departure<finish;departure+=45){
+   const t=trucks.find(t=>!t.pendingSale&&freeAt.has(t)&&freeAt.get(t)<=departure&&t.fuel>=35&&t.health>=45&&t.tires>=35);
+   if(!t)continue;
+   t.trip++;t.duration=240+((Number(t.id)*43+t.trip*71)%480);
+   t.plannedKm=320+((t.trip*71+Number(t.id)*13)%410);
+   t.returnAt=departure+t.duration;
+   freeAt.set(t,t.returnAt);
+   if(t.returnAt<=finish){completeOfflineTrip(t);events++;freeAt.set(t,t.returnAt)}
+   else {t.status='Viagem';t.mesh.visible=false}
+  }
+ }
+ simMinutes=finish;
+ shift=Math.max(shift,Math.floor((simMinutes-480)/480)+1);
+ return events;
+}
+function restoreGame(){
+ let saved;
+ try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){console.warn(e)}
+ if(!saved||saved.version!==18)return;
+ restoring=true;
+ try{
+  // Rebuild bought lots with existing controls; reimburse their construction during restoration.
+  for(let i=0;i<(saved.sideExpansions||0);i++){finance=1e12;document.getElementById('expand').click()}
+  for(let i=0;i<(saved.rearExpansions||0);i++){finance=1e12;document.getElementById('expandRear').click()}
+  // Restore truck fleet from stable ids.
+  const wanted=new Set((saved.trucks||[]).map(t=>t.id));
+  for(const t of [...trucks])if(!wanted.has(t.id)){scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1)}
+  for(const st of saved.trucks||[]){
+   let t=trucks.find(x=>x.id===st.id);
+   if(!t){
+    const mesh=truck(st.homeX,st.homeZ,Math.max(0,Number(st.id)-1),st.brand);
+    t={mesh};trucks.push(t);
+   }
+   Object.assign(t,st);
+   t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=0;
+   t.mesh.visible=st.status!=='Viagem';
+   if(['Saindo','Entrando','Indo ao serviço','Estacionando'].includes(t.status)){
+    t.status=t.returnAt>saved.simMinutes?'Viagem':'Pátio';
+    t.mesh.visible=t.status!=='Viagem';
+   }
+  }
+  finance=saved.finance;simMinutes=saved.simMinutes;shift=saved.shift;
+  speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=!!saved.autoRicardo;
+  employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
+  totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
+  Object.assign(roleSalary,saved.roleSalary||{});Object.assign(staffRoles,saved.staffRoles||{});
+  if(saved.camera){pos.set(saved.camera.x,saved.camera.y,saved.camera.z);yaw=saved.camera.yaw;pitch=saved.camera.pitch}
+  const elapsedSeconds=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
+  const completed=simulateAway(elapsedSeconds);
+  log.unshift('Retorno ao jogo: '+Math.floor(elapsedSeconds/60)+' min fora • '+completed+' viagens concluídas.');
+  log=log.slice(0,9);
+  document.getElementById('speed').textContent='🕒 Tempo '+speedMultiplier+'×';
+  document.getElementById('auto').textContent=paused?'▶ Retomar movimento':'⏯ Pausar movimento';
+  mapDraw();
+  drawPanel();
+ }catch(e){console.error('Erro ao recuperar jogo',e)}
+ finally{restoring=false;saveGame()}
+}
+restoreGame();
+setInterval(()=>{if(!document.hidden)saveGame()},5000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
+window.addEventListener('pagehide',saveGame);
+window.addEventListener('beforeunload',saveGame);
+const saveButton=document.createElement('button');
+saveButton.textContent='💾 Salvar jogo';saveButton.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:30;padding:9px 12px;background:#176f52;color:white;border:1px solid #a9eac9;border-radius:9px;font-weight:bold;cursor:pointer';
+saveButton.onclick=()=>{const ok=saveGame();document.getElementById('toast').textContent=ok?'✓ Jogo salvo neste navegador.':'⚠️ Navegador bloqueou o salvamento.'};
+document.body.appendChild(saveButton);
+
+drawPanel();
+let clock=new THREE.Clock(),elapsed=0;function loop(){requestAnimationFrame(loop);let dt=Math.min(clock.getDelta(),.05);elapsed+=dt;updateWorld(dt,elapsed);for(const m of glbMixers)m.update(dt);let speed=(keys.has('shift')||touchSprint?48:25)*dt;let fw=(keys.has('w')||keys.has('arrowup')||keys.has('f')?1:0)-(keys.has('s')||keys.has('arrowdown')||keys.has('b')?1:0)+touchForward;let side=(keys.has('d')||keys.has('arrowright')||keys.has('r')?1:0)-(keys.has('a')||keys.has('arrowleft')||keys.has('l')?1:0)+touchSide;const forward=new THREE.Vector3();camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;camera.getWorldDirection(forward);forward.y=0;forward.normalize();const right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();const move=forward.multiplyScalar(fw).addScaledVector(right,side);if(move.lengthSq()>0)move.normalize().multiplyScalar(speed);pos.x+=move.x;pos.z+=move.z;pos.x=Math.max(-133,Math.min(Math.max(133,178+(sideExpansions-1)*65),pos.x));pos.z=Math.max(-145-rearExpansions*75,Math.min(132,pos.z));camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;document.getElementById('where').textContent='Local: '+(pos.z>95?'Entrada / portaria':pos.x>18&&pos.z<-40?'Oficina':pos.x< -15&&pos.z<-45?'Abastecimento e lavador':pos.x< -48&&pos.z>45?'Administração':'Pátio de caminhões');renderer.render(scene,camera)}loop();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
