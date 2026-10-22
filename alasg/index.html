@@ -198,7 +198,7 @@ new GLTFLoader().load('https://threejs.org/examples/models/gltf/Soldier.glb',glt
 const roles=['Motorista','Mecânico','Borracheiro','Abastecedor','Administrativo','Controlador de frota','Segurança','Limpeza'];
 const roleSalary={'Motorista':5500,'Mecânico':4200,'Borracheiro':3600,'Abastecedor':3000,'Administrativo':3500,'Controlador de frota':5500,'Segurança':4200,'Limpeza':2300};
 const staffRoles={'Motorista':14,'Mecânico':6,'Borracheiro':3,'Abastecedor':4,'Administrativo':5,'Controlador de frota':1,'Segurança':3,'Limpeza':2};
-let saleConfirmation=null;let expansionLots=[];let sideExpansions=0,rearExpansions=0;let shift=1,paused=false,clockSim=0,simMinutes=8*60,speedMultiplier=1,autoRicardo=false,finance=50000000,employeeCount=38,expansion=0,nextTruckId=13,tireJobs=0,log=['Turno 1: transportadora aberta.','12 conjuntos posicionados no pátio.'],totalRevenue=0,totalKm=0;
+let saleConfirmation=null;let expansionLots=[];let sideExpansions=0,rearExpansions=0;let shift=1,paused=false,clockSim=0,simMinutes=8*60,speedMultiplier=1,autoRicardo=true,finance=50000000,employeeCount=38,expansion=0,nextTruckId=13,tireJobs=0,log=['Turno 1: transportadora aberta.','12 conjuntos posicionados no pátio.'],totalRevenue=0,totalKm=0;
 function record(m){log.unshift(m);log=log.slice(0,9);document.getElementById('toast').textContent=m;drawPanel()}
 function fmtTime(minutes){const v=Math.floor(minutes)%1440;return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}
 function drawPanel(){let inYard=trucks.filter(t=>t.status==='Pátio').length,travel=trucks.filter(t=>t.status==='Viagem').length,returning=trucks.filter(t=>t.status==='Retornando').length,leaving=trucks.filter(t=>t.status==='Saindo'||t.status==='Entrando').length;
@@ -348,7 +348,7 @@ function simulateAway(seconds){
  }
  if(autoRicardo){
   // Event-based approximation: a dispatch every 45 simulated minutes, with a per-truck return.
-  const start=simMinutes,first=Math.ceil(start/45)*45;
+  const start=simMinutes,first=(Math.floor(start/45)+1)*45;
   const freeAt=new Map(trucks.map(t=>[t,t.status==='Viagem'?(t.returnAt||finish+1):start]));
   for(let departure=first;departure<finish;departure+=45){
    const t=trucks.find(t=>!t.pendingSale&&freeAt.has(t)&&freeAt.get(t)<=departure&&t.fuel>=35&&t.health>=45&&t.tires>=35);
@@ -415,14 +415,15 @@ function restoreGame(){
    }
   }
   finance=saved.finance;simMinutes=saved.simMinutes;shift=saved.shift;
-  speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=!!saved.autoRicardo;
+  speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
   Object.assign(roleSalary,saved.roleSalary||{});Object.assign(staffRoles,saved.staffRoles||{});
   if(saved.camera){pos.set(saved.camera.x,saved.camera.y,saved.camera.z);yaw=saved.camera.yaw;pitch=saved.camera.pitch}
   const elapsedSeconds=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
   const completed=simulateAway(elapsedSeconds);
-  log.unshift('Retorno ao jogo: '+Math.floor(elapsedSeconds/60)+' min fora • '+completed+' viagens concluídas.');
+  reconcileYardCapacity();
+  log.unshift('Progresso offline: '+Math.floor(elapsedSeconds/60)+' min ausente • '+completed+' viagens concluídas • Ricardo '+(autoRicardo?'ligado':'desligado')+'.');
   log=log.slice(0,9);
   document.getElementById('speed').textContent='🕒 Tempo '+speedMultiplier+'×';
   document.getElementById('auto').textContent=paused?'▶ Retomar movimento':'⏯ Pausar movimento';
@@ -435,7 +436,7 @@ restoreGame();
 reconcileYardCapacity();
 saveGame();
 setInterval(()=>{if(!document.hidden)saveGame()},5000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){saveGame()}else{const delta=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-lastSave)/1000));if(delta>3){const completed=simulateAway(delta);reconcileYardCapacity();log.unshift('Retorno à aba: '+Math.floor(delta/60)+' min • '+completed+' viagens concluídas.');log=log.slice(0,9);drawPanel();saveGame()}}});
 window.addEventListener('pagehide',saveGame);
 window.addEventListener('beforeunload',saveGame);
 const saveButton=document.createElement('button');
