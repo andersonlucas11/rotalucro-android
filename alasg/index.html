@@ -255,7 +255,7 @@ document.getElementById('visitFacility').onclick=()=>{if(!selectedId)return;let 
 
 document.getElementById('dispatch').onclick=dispatch;document.getElementById('ops').addEventListener('click',e=>{let id=e.target.id;let sell=e.target.closest('[data-sell]');if(sell){let t=trucks.find(t=>t.id===sell.dataset.sell);if(!t)return;if(t.pendingSale){saleConfirmation=null;t.pendingSale=false;return record('Venda programada do CAV-'+t.id+' cancelada.');}let price=resaleValue(t);if(t.status!=='Pátio'){saleConfirmation=null;t.pendingSale=true;return record('Venda do CAV-'+t.id+' agendada para o retorno. Ricardo não fará novo despacho deste veículo.');}saleConfirmation=null;return sellTruck(t);}let tire=e.target.closest('[data-tire]');if(tire){let t=trucks.find(t=>t.id===tire.dataset.tire);if(!t||t.status!=='Pátio')return;return beginServiceRoute(t,'Borracharia');}if(id==='ricardo'){autoRicardo=!autoRicardo;record('Ricardo: despacho automático '+(autoRicardo?'ativado':'desativado')+'.');}if(id==='hire'){record('Selecione o cargo em Menu ALASG → Funcionários para contratar.')}let hireRole=e.target.closest('[data-hire-role]');if(hireRole){let role=hireRole.dataset.hireRole;staffRoles[role]++;employeeCount++;let f=facilities[role==='Mecânico'?'workshop':role==='Borracheiro'?'tires':role==='Abastecedor'?'fuel':'admin'];worker(f.x+(employeeCount%4)*3,f.z+f.d/2+4,role,people.length);record('Contratado: '+role+' • R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês.');}let payUp=e.target.closest('[data-pay-up]'),payDown=e.target.closest('[data-pay-down]');
 if(payUp||payDown){const role=(payUp||payDown).dataset[payUp?'payUp':'payDown'];const delta=payUp?100:-100;const minimum=1518;if(roleSalary[role]+delta<minimum)return record('Salário não pode ficar abaixo do piso mínimo de referência de R$ '+minimum.toLocaleString('pt-BR')+'.');roleSalary[role]+=delta;return record('Salário de '+role+' atualizado para R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês. Impacto mensal na folha: R$ '+(delta*staffRoles[role]).toLocaleString('pt-BR')+'.');}
-if(id==='buy'){if(finance<715000)return record('Caixa insuficiente para a compra.');finance-=715000;let i=nextTruckId++-1,mesh=truck(i<12?-100+(i%6)*19:-117+((i-12)%3)*13,i<12?25-Math.floor(i/6)*36:-15-Math.floor((i-12)/3)*27,i);trucks.push({mesh,brand:mesh.userData.brand,id:String(i+1).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:0,trip:0,earnings:0,fuel:100,health:100,tires:100,needs:'',homeX:mesh.position.x,homeZ:mesh.position.z});record('Novo caminhão CAV-'+String(i+1).padStart(4,'0')+' comprado.');}if(id==='visitExpand'){if(!expansion)return record('Ainda não há expansão.');if(rearExpansions){pos.set(0,6,-140-(rearExpansions-1)*75-37);yaw=0;pitch=-.2;}else{pos.set(145+(sideExpansions-1)*65,6,10);yaw=0;pitch=-.2;}document.getElementById('ops').open=false;return record('Visitando o pátio expandido.');}
+if(id==='buy'){if(trucks.length>=12+24*(sideExpansions+rearExpansions))return record('Pátio lotado: compre uma expansão antes de adquirir mais caminhões.');if(finance<715000)return record('Caixa insuficiente para a compra.');finance-=715000;let i=nextTruckId++-1,mesh=truck(i<12?-100+(i%6)*19:-117+((i-12)%3)*13,i<12?25-Math.floor(i/6)*36:-15-Math.floor((i-12)/3)*27,i);trucks.push({mesh,brand:mesh.userData.brand,id:String(i+1).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:0,trip:0,earnings:0,fuel:100,health:100,tires:100,needs:'',homeX:mesh.position.x,homeZ:mesh.position.z});record('Novo caminhão CAV-'+String(i+1).padStart(4,'0')+' comprado.');}if(id==='visitExpand'){if(!expansion)return record('Ainda não há expansão.');if(rearExpansions){pos.set(0,6,-140-(rearExpansions-1)*75-37);yaw=0;pitch=-.2;}else{pos.set(145+(sideExpansions-1)*65,6,10);yaw=0;pitch=-.2;}document.getElementById('ops').open=false;return record('Visitando o pátio expandido.');}
 if(id==='expand'||id==='expandRear'){if(finance<1500000)return record('Caixa insuficiente para expansão.');finance-=1500000;expansion++;
 if(id==='expand'){sideExpansions++;const cx=145+(sideExpansions-1)*65;
 expansionLots.push(box(66,.14,270,asphalt,cx,-.12,-5));
@@ -268,7 +268,7 @@ box(width,.14,16,asphalt,cx,-.12,z+45);
 for(let xx=-105;xx<110+sideExpansions*65;xx+=23)for(let zz of [z-20,z+20]){box(14,.025,.22,white,xx,-.03,zz);box(.2,.025,14,white,xx+8,-.03,zz);}
 pos.set(0,6,z);record('Expansão dos fundos '+rearExpansions+' construída e integrada ao pátio.');}
 for(const tree of perimeterTrees){const x=tree.position.x,z=tree.position.z;if((sideExpansions>0&&x>=100&&x<=112+sideExpansions*65&&z>=-143&&z<=135)||(rearExpansions>0&&z>=-140-rearExpansions*75&&z<=-120&&x>=-120&&x<=120+sideExpansions*65))tree.visible=false;}
-yaw=0;pitch=-.2;mapDraw();
+yaw=0;pitch=-.2;reconcileYardCapacity();mapDraw();
 }});
 document.getElementById('auto').onclick=()=>{paused=!paused;document.getElementById('auto').textContent=paused?'▶ Retomar movimento':'⏯ Pausar movimento';record(paused?'Operações pausadas.':'Operações retomadas.')};
 document.getElementById('speed').onclick=()=>{speedMultiplier=speedMultiplier===1?2:speedMultiplier===2?4:1;document.getElementById('speed').textContent='🕒 Tempo '+speedMultiplier+'×';record('Velocidade do relógio alterada para '+speedMultiplier+'×.')};
@@ -365,6 +365,29 @@ function simulateAway(seconds){
  shift=Math.max(shift,Math.floor((simMinutes-480)/480)+1);
  return events;
 }
+
+// Controle de propriedade e capacidade: nenhum veículo estaciona em terreno não comprado.
+function reconcileYardCapacity(){
+ const capacity=12+24*(sideExpansions+rearExpansions);
+ let occupied=0;
+ for(const t of trucks){
+  if(t.status==='Aguardando vaga'){
+   if(occupied<capacity){
+    t.status='Pátio';
+    const index=occupied++;
+    if(index>=12){
+     const extra=index-12,lot=Math.floor(extra/24),slot=extra%24;
+     if(lot<sideExpansions){t.homeX=126+lot*65+(slot%4)*13;t.homeZ=-105+Math.floor(slot/4)*35;}
+     else {const back=lot-sideExpansions;t.homeX=-100+(slot%6)*35;t.homeZ=-160-back*75-Math.floor(slot/6)*16;}
+    }
+    t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.visible=true;
+   }else t.mesh.visible=false;
+  }else if(t.status==='Pátio'){
+   if(occupied>=capacity){t.status='Aguardando vaga';t.mesh.visible=false;}
+   else {occupied++;t.mesh.visible=true;}
+  }
+ }
+}
 function restoreGame(){
  let saved;
  try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){console.warn(e)}
@@ -385,7 +408,7 @@ function restoreGame(){
    }
    Object.assign(t,st);
    t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=0;
-   t.mesh.visible=st.status!=='Viagem';
+   t.mesh.visible=st.status!=='Viagem'&&st.status!=='Aguardando vaga';
    if(['Saindo','Entrando','Indo ao serviço','Estacionando'].includes(t.status)){
     t.status=t.returnAt>saved.simMinutes?'Viagem':'Pátio';
     t.mesh.visible=t.status!=='Viagem';
@@ -409,6 +432,8 @@ function restoreGame(){
  finally{restoring=false;saveGame()}
 }
 restoreGame();
+reconcileYardCapacity();
+saveGame();
 setInterval(()=>{if(!document.hidden)saveGame()},5000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
 window.addEventListener('pagehide',saveGame);
