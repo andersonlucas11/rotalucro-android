@@ -438,15 +438,15 @@ mapSvg.addEventListener('pointerdown',e=>{if(!parkingEditing)return;const p=e.ta
 window.addEventListener('pointermove',e=>{if(!parkingEditing||!dragParking)return;const pt=parkingMapPoint(e),p=parkingSlots().find(p=>p.id===dragParking);if(!p)return;p.previewX=pt.x;p.previewZ=pt.z;mapDraw()});
 window.addEventListener('pointerup',e=>{if(!dragParking)return;ensureParking();const p=parkingSlots().find(p=>p.id===dragParking);dragParking=null;if(!p)return;const x=p.previewX??p.x,z=p.previewZ??p.z;delete p.previewX;delete p.previewZ;const error=canPlaceParking(x,z,p,p.rotation||0);if(error){record(error);mapDraw();return}p.x=x;p.z=z;markParkingDirty();record('Vaga '+p.id+' reposicionada. Caminhão seguindo para a posição.')});
 
-function restoreGame(){
- let saved;
- try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){console.warn(e)}
+function restoreGame(cloudOverride=null){
+ let saved=cloudOverride;
+ if(!saved)try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){console.warn(e)}
  if(!saved||saved.version!==18||!Array.isArray(saved.trucks)||!saved.trucks.length){try{const candidates=[localStorage.getItem(BACKUP_KEY),...(JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')||[])].filter(Boolean).map(x=>typeof x==='string'?JSON.parse(x):x).filter(x=>x&&x.version===18&&Array.isArray(x.trucks)&&x.trucks.length);candidates.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));saved=candidates[0]}catch(e){console.warn('Falha ao procurar backup',e)}if(!saved||!Array.isArray(saved.trucks)||!saved.trucks.length)return;}
  restoring=true;let restoreFailed=false;
  try{
   // Rebuild bought lots with existing controls; reimburse their construction during restoration.
-  for(let i=0;i<(saved.sideExpansions||0);i++){finance=1500000;document.getElementById('expand').click()}
-  for(let i=0;i<(saved.rearExpansions||0);i++){finance=1500000;document.getElementById('expandRear').click()}
+  for(let i=sideExpansions;i<(saved.sideExpansions||0);i++){finance=1500000;document.getElementById('expand').click()}
+  for(let i=rearExpansions;i<(saved.rearExpansions||0);i++){finance=1500000;document.getElementById('expandRear').click()}
   // Restore truck fleet from stable ids.
   const wanted=new Set((saved.trucks||[]).map(t=>t.id));
   for(const t of [...trucks])if(!wanted.has(t.id)){scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1)}
@@ -474,7 +474,7 @@ function restoreGame(){
   for(const [id,st] of Object.entries(saved.facilities||{})){const f=facilities[id];if(!f)continue;f.group.position.set(st.x,0,st.z);f.x=st.x;f.z=st.z;f.rotation=st.rotation||0;f.group.rotation.y=f.rotation;f.level=st.level||1;f.floors=st.floors||1;f.expanded=st.expanded||0;for(let j=1;j<f.floors;j++){let y=(f.id==='fuel'?7:11)+(j-1)*7;box(f.w*.88,6.5,f.d*.88,white,0,y+3,0,f.group);box(f.w*.92,.65,f.d*.92,roof,0,y+6.5,0,f.group)}for(let j=1;j<f.level;j++)box(f.w*.85,.45,f.d*.85,gold,0,Math.max(12,f.floors*7+6)+j*.5,0,f.group);for(let j=0;j<f.expanded;j++){let x=f.w/2+5;let ext=box(10,8,f.d*.85,white,x,4,0,f.group),top=box(11,.8,f.d*.9,roof,x,8.5,0,f.group);f.additions.push([ext,top]);f.w+=10;}}
   serviceTargets.Abastecendo={x:facilities.fuel.x,z:facilities.fuel.z+20};serviceTargets.Manutenção={x:facilities.workshop.x,z:facilities.workshop.z+33};serviceTargets.Borracharia={x:facilities.tires.x,z:facilities.tires.z+13};
   if(saved.camera){pos.set(saved.camera.x,saved.camera.y,saved.camera.z);yaw=saved.camera.yaw;pitch=saved.camera.pitch}
-  const importedFromCloud=localStorage.getItem('alasg_cloud_import_pending_v1')==='1';
+  const importedFromCloud=!!cloudOverride||localStorage.getItem('alasg_cloud_import_pending_v1')==='1';
   const elapsedSeconds=importedFromCloud?0:Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
   const completed=simulateAway(elapsedSeconds);
   reconcileYardCapacity();
@@ -485,7 +485,7 @@ function restoreGame(){
   mapDraw();
   drawPanel();
  }catch(e){restoreFailed=true;console.error('Erro ao recuperar jogo',e);alert('Erro ao carregar a partida. Salvamento original preservado.')} 
- finally{restoring=false;if(!restoreFailed){localStorage.removeItem('alasg_cloud_import_pending_v1');saveGame()}}
+ finally{restoring=false;if(!restoreFailed){localStorage.removeItem('alasg_cloud_import_pending_v1');saveGame();if(cloudOverride){drawPanel();document.getElementById('toast').textContent='☁️ Partida da nuvem aplicada: R$ '+Number(finance).toLocaleString('pt-BR')+' • '+trucks.length+' caminhões';}}}
 }
 restoreGame();
 reconcileYardCapacity();
@@ -501,6 +501,7 @@ document.body.appendChild(saveButton);
 window.ALASGCloudBridge={
  getSave(){saveGame();return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')},
  getLocal(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){return null}},
+ applyCloud(data){restoreGame(data);return {finance,trucks:trucks.length}},
  installCloud(data){if(!data||data.version!==18||!Array.isArray(data.trucks)||!data.trucks.length)throw Error('Salvamento inválido');const current=localStorage.getItem(SAVE_KEY);if(current){localStorage.setItem('alasg_pre_cloud_import_'+Date.now(),current);localStorage.setItem(BACKUP_KEY,current)}localStorage.setItem('alasg_cloud_import_pending_v1','1');localStorage.setItem(SAVE_KEY,JSON.stringify({...data,savedAt:Date.now()}));}
 };
 
@@ -529,7 +530,7 @@ function render(){actions.replaceChildren();status.textContent=user?'Conectado: 
 async function login(){try{await signInWithPopup(auth,provider)}catch(e){if(e.code==='auth/popup-blocked'){await signInWithRedirect(auth,provider);return}alert('Não foi possível entrar: '+e.message)}}
 async function inspect(){if(!user)return;try{const snap=await getDoc(ref());if(!snap.exists()){cloudRevision=null;alert('Ainda não existe partida na nuvem. No PC, clique em Enviar partida.');return}const v=snap.data();cloudRevision=v.revision||null;alert('Partida na nuvem: '+(v.game?.trucks?.length||0)+' caminhões; saldo R$ '+Number(v.game?.finance||0).toLocaleString('pt-BR')+'; salva em '+new Date(v.updatedAt||0).toLocaleString('pt-BR'))}catch(e){alert('Falha ao consultar a nuvem: '+e.message)}}
 async function upload(){if(!user||busy)return;const game=window.ALASGCloudBridge?.getSave();if(!valid(game)){alert('Partida local inválida; envio cancelado.');return}busy=true;try{const old=await getDoc(ref()),remote=old.exists()?old.data():null;const localDate=new Date(game.savedAt||0).toLocaleString('pt-BR'),remoteDate=remote?new Date(remote.updatedAt||0).toLocaleString('pt-BR'):'nenhuma';if(remote&&!confirm('Já existe partida na nuvem ('+remoteDate+'). Ela será substituída pela partida deste aparelho ('+game.trucks.length+' caminhões, R$ '+Number(game.finance).toLocaleString('pt-BR')+'). Deseja continuar?'))return;if(!remote&&!confirm('Enviar ESTA partida à nuvem? '+game.trucks.length+' caminhões, R$ '+Number(game.finance).toLocaleString('pt-BR')+'. Confirme somente no computador que contém sua partida principal.'))return;const expected=remote?.revision||null;const revision=crypto.randomUUID();await runTransaction(db,async tx=>{const snap=await tx.get(ref()),now=snap.exists()?snap.data():null;if((now?.revision||null)!==expected)throw Error('A partida na nuvem mudou durante o envio. Consulte antes de tentar novamente.');tx.set(ref(),{game,revision,updatedAt:Date.now(),email:user.email||''})});cloudRevision=revision;autoSync=true;alert('Partida enviada com sucesso! Agora você pode entrar no celular e carregar da nuvem.')}catch(e){alert('Erro ao enviar: '+e.message)}finally{busy=false}}
-async function download(){if(!user||busy)return;busy=true;try{const snap=await getDoc(ref());if(!snap.exists())return alert('Não existe partida na nuvem. Envie primeiro pelo PC.');const remote=snap.data(),game=remote.game;if(!valid(game))throw Error('Arquivo da nuvem inválido');const local=window.ALASGCloudBridge?.getLocal();if(!confirm('Carregar partida da nuvem com '+game.trucks.length+' caminhões e R$ '+Number(game.finance).toLocaleString('pt-BR')+'? O salvamento local atual ('+(local?.trucks?.length||0)+' caminhões) terá uma cópia de segurança antes da troca.'))return;window.ALASGCloudBridge.installCloud(game);cloudRevision=remote.revision||null;autoSync=true;alert('Partida recuperada! O jogo será recarregado.');location.reload()}catch(e){alert('Falha ao carregar: '+e.message)}finally{busy=false}}
+async function download(){if(!user||busy)return;busy=true;try{const snap=await getDoc(ref());if(!snap.exists())return alert('Não existe partida na nuvem. Envie primeiro pelo PC.');const remote=snap.data(),game=remote.game;if(!valid(game))throw Error('Arquivo da nuvem inválido');const local=window.ALASGCloudBridge?.getLocal();if(!confirm('Carregar partida da nuvem com '+game.trucks.length+' caminhões e R$ '+Number(game.finance).toLocaleString('pt-BR')+'? O salvamento local atual ('+(local?.trucks?.length||0)+' caminhões) terá uma cópia de segurança antes da troca.'))return;const result=window.ALASGCloudBridge.applyCloud(game);if(Math.abs(result.finance-Number(game.finance))>0.01||result.trucks!==game.trucks.length)throw Error('Conferência falhou: saldo ou frota diferente.');cloudRevision=remote.revision||null;autoSync=true;alert('Partida aplicada diretamente! Saldo: R$ '+Number(result.finance).toLocaleString('pt-BR')+' • '+result.trucks+' caminhões.');}catch(e){alert('Falha ao carregar: '+e.message)}finally{busy=false}}
 onAuthStateChanged(auth,u=>{user=u;render()});getRedirectResult(auth).catch(e=>console.warn('Login Firebase',e));
 </script>
 </body></html>
