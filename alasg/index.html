@@ -24,11 +24,11 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x9cc6d8);scene.fog=new THREE.Fog(0x9cc6d8,180,470);const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,900);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=false;document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9cc6d8);scene.fog=new THREE.Fog(0x9cc6d8,180,470);const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,900);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1));renderer.shadowMap.enabled=false;document.body.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x527266,2.1));const sun=new THREE.DirectionalLight(0xfff3d9,2.7);sun.position.set(80,120,60);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-200;sun.shadow.camera.right=200;sun.shadow.camera.top=200;sun.shadow.camera.bottom=-200;scene.add(sun);
 const mat=(c,metalness=0)=>new THREE.MeshStandardMaterial({color:c,metalness,roughness:metalness?.28:.83});const green=mat(0x64b58c,.62),gold=mat(0xcaa54c,.55),white=mat(0xf2f5f0),black=mat(0x20272b),glass=new THREE.MeshStandardMaterial({color:0x193d46,metalness:.2,roughness:.14,transparent:true,opacity:.78}),concrete=mat(0x777e7a),asphalt=mat(0x464e4d),roof=mat(0x24453f),grass=mat(0x658b55);
 function box(w,h,d,m,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=false;o.receiveShadow=false;parent.add(o);return o}function cyl(r,h,m,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,16),m);o.position.set(x,y,z);o.castShadow=false;parent.add(o);return o}function label(text,x,y,z,size=2){let canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;let c=canvas.getContext('2d');c.fillStyle='#0c352e';c.fillRect(0,0,1024,128);c.fillStyle='#f1d37b';c.font='bold 78px Arial';c.textAlign='center';c.fillText(text,512,91);let mesh=new THREE.Mesh(new THREE.PlaneGeometry(size*8,size),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));mesh.position.set(x,y,z);scene.add(mesh);return mesh}
-box(600,.3,600,grass,0,-.35,0);box(240,.12,270,asphalt,0,-.12,-20);for(let x=-110;x<=110;x+=11)for(let z=-140;z<110;z+=20){if((x+z)%3===0)box(.14,.02,4,white,x,-.04,z)}
+box(600,.3,600,grass,0,-.35,0);box(240,.12,270,asphalt,0,-.12,-20);// Marcações de vagas geradas conforme terreno adquirido.
 // Corredores sinalizados de circulação, com entrada e saída separadas
 box(23,.035,240,mat(0x505a55),0,-.035,-3);
 for(let z=-100;z<110;z+=16)box(.2,.04,7,gold,0,-.005,z);
@@ -231,7 +231,7 @@ function mapDraw(){
 }
 function selectFacility(id){selectedId=id;preview=null;mapDraw();let f=facilities[id];document.getElementById('selectedFacility').textContent=f.name;detailsFacility()}
 function detailsFacility(){if(!selectedId)return;let f=facilities[selectedId],a=preview||f;document.getElementById('facilityDetails').innerHTML=`Posição X: ${a.x.toFixed(0)} / Z: ${a.z.toFixed(0)}<br>Área: ${Math.round(f.w*f.d)} m²<br>Andares: ${f.floors}<br>Rotação: ${Math.round(f.rotation*180/Math.PI)%360}°<br>Melhoria: nível ${f.level}<br>Ampliações: ${f.expanded}`;}
-function pointOnMap(e){const r=mapSvg.getBoundingClientRect();const vb=mapSvg.viewBox.baseVal;return {x:wx((e.clientX-r.left)*vb.width/r.width),z:wz((e.clientY-r.top)*vb.height/r.height)}}
+function pointOnMap(e){const r=mapSvg.getBoundingClientRect();const vb=mapSvg.viewBox.baseVal;return {x:wx(vb.x+(e.clientX-r.left)*vb.width/r.width),z:wz(vb.y+(e.clientY-r.top)*vb.height/r.height)}}
 mapSvg.addEventListener('pointerdown',e=>{let target=e.target.closest('[data-f]');if(!target)return;selectFacility(target.dataset.f);dragFacility=target.dataset.f;mapSvg.setPointerCapture(e.pointerId)});
 mapSvg.addEventListener('pointermove',e=>{if(!dragFacility)return;let pt=pointOnMap(e);let f=facilities[dragFacility];preview={x:Math.max(-111,Math.min(110+sideExpansions*65,Math.round(pt.x/5)*5)),z:Math.max(-140-rearExpansions*75,Math.min(105,Math.round(pt.z/5)*5))};mapDraw();detailsFacility()});
 mapSvg.addEventListener('pointerup',()=>dragFacility=null);
@@ -246,8 +246,8 @@ const serviceTargets={'Abastecendo':{x:-52,z:-52},'Manutenção':{x:58,z:-42},'B
 document.getElementById('mapOpen').onclick=()=>{mapEditor.hidden=false;document.getElementById('menu').hidden=true;document.getElementById('ops').style.visibility='hidden';mapDraw()};
 document.getElementById('mapClose').onclick=()=>{mapEditor.hidden=true;document.getElementById('ops').style.visibility='visible'};
 document.getElementById('moveSave').onclick=moveFacility;
-document.getElementById('improveFacility').onclick=()=>{if(!selectedId||!facilityCost(150000))return;let f=facilities[selectedId];f.level++;let upgrade=box(f.w*.85,.45,f.d*.85,gold,f.x,Math.max(12,f.floors*7+6),f.z);f.group.attach(upgrade);f.objects.push(upgrade);detailsFacility();record(f.name+' melhorada para nível '+f.level+'.')};
-document.getElementById('floorFacility').onclick=()=>{if(!selectedId||!facilityCost(350000))return;let f=facilities[selectedId];let height=f.id==='fuel'?7:11;let y=height+(f.floors-1)*7;let b=box(f.w*.88,6.5,f.d*.88,white,f.x,y+3,f.z);let r=box(f.w*.92,.65,f.d*.92,roof,f.x,y+6.5,f.z);f.group.attach(b);f.group.attach(r);f.objects.push(b,r);f.floors++;detailsFacility();record('Novo pavimento construído em '+f.name+'.')};
+document.getElementById('improveFacility').onclick=()=>{if(!selectedId||!facilityCost(150000))return;let f=facilities[selectedId];f.level++;let upgrade=box(f.w*.85,.45,f.d*.85,gold,0,Math.max(12,f.floors*7+6),0,f.group);f.objects.push(upgrade);detailsFacility();record(f.name+' melhorada para nível '+f.level+'.')};
+document.getElementById('floorFacility').onclick=()=>{if(!selectedId||!facilityCost(350000))return;let f=facilities[selectedId];let height=f.id==='fuel'?7:11;let y=height+(f.floors-1)*7;let b=box(f.w*.88,6.5,f.d*.88,white,0,y+3,0,f.group);let r=box(f.w*.92,.65,f.d*.92,roof,0,y+6.5,0,f.group);f.objects.push(b,r);f.floors++;detailsFacility();record('Novo pavimento construído em '+f.name+'.')};
 document.getElementById('enlargeFacility').onclick=()=>{if(!selectedId||!facilityCost(250000))return;let f=facilities[selectedId];let x=f.w/2+5;let ext=box(10,8,f.d*.85,white,x,4,0,f.group);let top=box(11,.8,f.d*.9,roof,x,8.5,0,f.group);f.objects.push(ext,top);f.additions.push([ext,top]);f.w+=10;f.expanded++;mapDraw();detailsFacility();record(f.name+' ampliada em área construída.')};
 document.getElementById('shrinkFacility').onclick=()=>{if(!selectedId)return;let f=facilities[selectedId];if(!f.additions.length)return record('Esta instalação ainda não tem ampliações para remover.');const parts=f.additions.pop();for(const o of parts){f.group.remove(o);o.geometry.dispose();}f.w-=10;f.expanded--;mapDraw();detailsFacility();record('Última ampliação removida de '+f.name+'. Não há reembolso de obras.');};
 document.getElementById('rotateFacility').onclick=()=>{if(!selectedId)return;let f=facilities[selectedId];if(!facilityCost(25000))return;f.rotation=(f.rotation+Math.PI/2)%(Math.PI*2);f.group.rotation.y=f.rotation;mapDraw();detailsFacility();record(f.name+' girada em 90° no mapa e no cenário 3D.');};
@@ -255,7 +255,7 @@ document.getElementById('visitFacility').onclick=()=>{if(!selectedId)return;let 
 
 document.getElementById('dispatch').onclick=dispatch;document.getElementById('ops').addEventListener('click',e=>{let id=e.target.id;let sell=e.target.closest('[data-sell]');if(sell){let t=trucks.find(t=>t.id===sell.dataset.sell);if(!t)return;if(t.pendingSale){saleConfirmation=null;t.pendingSale=false;return record('Venda programada do CAV-'+t.id+' cancelada.');}let price=resaleValue(t);if(t.status!=='Pátio'){saleConfirmation=null;t.pendingSale=true;return record('Venda do CAV-'+t.id+' agendada para o retorno. Ricardo não fará novo despacho deste veículo.');}saleConfirmation=null;return sellTruck(t);}let tire=e.target.closest('[data-tire]');if(tire){let t=trucks.find(t=>t.id===tire.dataset.tire);if(!t||t.status!=='Pátio')return;return beginServiceRoute(t,'Borracharia');}if(id==='ricardo'){autoRicardo=!autoRicardo;record('Ricardo: despacho automático '+(autoRicardo?'ativado':'desativado')+'.');}if(id==='hire'){record('Selecione o cargo em Menu ALASG → Funcionários para contratar.')}let hireRole=e.target.closest('[data-hire-role]');if(hireRole){let role=hireRole.dataset.hireRole;staffRoles[role]++;employeeCount++;let f=facilities[role==='Mecânico'?'workshop':role==='Borracheiro'?'tires':role==='Abastecedor'?'fuel':'admin'];worker(f.x+(employeeCount%4)*3,f.z+f.d/2+4,role,people.length);record('Contratado: '+role+' • R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês.');}let payUp=e.target.closest('[data-pay-up]'),payDown=e.target.closest('[data-pay-down]');
 if(payUp||payDown){const role=(payUp||payDown).dataset[payUp?'payUp':'payDown'];const delta=payUp?100:-100;const minimum=1518;if(roleSalary[role]+delta<minimum)return record('Salário não pode ficar abaixo do piso mínimo de referência de R$ '+minimum.toLocaleString('pt-BR')+'.');roleSalary[role]+=delta;return record('Salário de '+role+' atualizado para R$ '+roleSalary[role].toLocaleString('pt-BR')+'/mês. Impacto mensal na folha: R$ '+(delta*staffRoles[role]).toLocaleString('pt-BR')+'.');}
-if(id==='buy'){if(trucks.length>=12+24*(sideExpansions+rearExpansions))return record('Pátio lotado: compre uma expansão antes de adquirir mais caminhões.');if(finance<715000)return record('Caixa insuficiente para a compra.');finance-=715000;let i=nextTruckId++-1,mesh=truck(i<12?-100+(i%6)*19:-117+((i-12)%3)*13,i<12?25-Math.floor(i/6)*36:-15-Math.floor((i-12)/3)*27,i);trucks.push({mesh,brand:mesh.userData.brand,id:String(i+1).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:0,trip:0,earnings:0,fuel:100,health:100,tires:100,needs:'',homeX:mesh.position.x,homeZ:mesh.position.z});record('Novo caminhão CAV-'+String(i+1).padStart(4,'0')+' comprado.');}if(id==='visitExpand'){if(!expansion)return record('Ainda não há expansão.');if(rearExpansions){pos.set(0,6,-140-(rearExpansions-1)*75-37);yaw=0;pitch=-.2;}else{pos.set(145+(sideExpansions-1)*65,6,10);yaw=0;pitch=-.2;}document.getElementById('ops').open=false;return record('Visitando o pátio expandido.');}
+if(id==='buy'){if(trucks.length>=12+24*(sideExpansions+rearExpansions))return record('Pátio lotado: compre uma expansão antes de adquirir mais caminhões.');if(finance<715000)return record('Caixa insuficiente para a compra.');finance-=715000;let i=nextTruckId++-1,mesh=truck(i<12?-100+(i%6)*19:-117+((i-12)%3)*13,i<12?25-Math.floor(i/6)*36:-15-Math.floor((i-12)/3)*27,i);trucks.push({mesh,brand:mesh.userData.brand,id:String(i+1).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:0,trip:0,earnings:0,fuel:100,health:100,tires:100,needs:'',homeX:mesh.position.x,homeZ:mesh.position.z});reconcileYardCapacity();record('Novo caminhão CAV-'+String(i+1).padStart(4,'0')+' comprado.');}if(id==='visitExpand'){if(!expansion)return record('Ainda não há expansão.');if(rearExpansions){pos.set(0,6,-140-(rearExpansions-1)*75-37);yaw=0;pitch=-.2;}else{pos.set(145+(sideExpansions-1)*65,6,10);yaw=0;pitch=-.2;}document.getElementById('ops').open=false;return record('Visitando o pátio expandido.');}
 if(id==='expand'||id==='expandRear'){if(finance<1500000)return record('Caixa insuficiente para expansão.');finance-=1500000;expansion++;
 if(id==='expand'){sideExpansions++;const cx=145+(sideExpansions-1)*65;
 expansionLots.push(box(66,.14,270,asphalt,cx,-.12,-5));
@@ -304,7 +304,7 @@ function snapshot(){
  return {
   version:18,savedAt:Date.now(),finance,simMinutes,shift,speedMultiplier,paused,autoRicardo,
   employeeCount,roleSalary:{...roleSalary},staffRoles:{...staffRoles},
-  sideExpansions,rearExpansions,nextTruckId,tireJobs,totalRevenue,totalKm,log:[...log],
+  sideExpansions,rearExpansions,nextTruckId,tireJobs,totalRevenue,totalKm,log:[...log],facilities:Object.fromEntries(Object.entries(facilities).map(([id,f])=>[id,{x:f.x,z:f.z,rotation:f.rotation,level:f.level,floors:f.floors,expanded:f.expanded}])),
   camera:{x:pos.x,y:pos.y,z:pos.z,yaw,pitch},
   trucks:trucks.map(t=>({
    id:t.id,brand:t.brand,status:t.status,km:t.km,trip:t.trip,earnings:t.earnings,
@@ -367,25 +367,27 @@ function simulateAway(seconds){
 }
 
 // Controle de propriedade e capacidade: nenhum veículo estaciona em terreno não comprado.
+const parkingMarks=[];let markedCapacity=-1;
+function parkingSlots(){
+ const slots=[];for(let i=0;i<12;i++)slots.push({x:-100+(i%6)*19,z:25-Math.floor(i/6)*36});
+ for(let lot=0;lot<sideExpansions;lot++)for(let j=0;j<24;j++)slots.push({x:124+lot*65+(j%4)*13,z:-105+Math.floor(j/4)*37});
+ for(let lot=0;lot<rearExpansions;lot++)for(let j=0;j<24;j++)slots.push({x:-102+(j%6)*37,z:-163-lot*75-Math.floor(j/6)*16});
+ return slots;
+}
 function reconcileYardCapacity(){
- const capacity=12+24*(sideExpansions+rearExpansions);
- let occupied=0;
- for(const t of trucks){
-  if(t.status==='Aguardando vaga'){
-   if(occupied<capacity){
-    t.status='Pátio';
-    const index=occupied++;
-    if(index>=12){
-     const extra=index-12,lot=Math.floor(extra/24),slot=extra%24;
-     if(lot<sideExpansions){t.homeX=126+lot*65+(slot%4)*13;t.homeZ=-105+Math.floor(slot/4)*35;}
-     else {const back=lot-sideExpansions;t.homeX=-100+(slot%6)*35;t.homeZ=-160-back*75-Math.floor(slot/6)*16;}
-    }
-    t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.visible=true;
-   }else t.mesh.visible=false;
-  }else if(t.status==='Pátio'){
-   if(occupied>=capacity){t.status='Aguardando vaga';t.mesh.visible=false;}
-   else {occupied++;t.mesh.visible=true;}
-  }
+ const slots=parkingSlots();
+ if(markedCapacity!==slots.length){
+  for(const m of parkingMarks){scene.remove(m);m.geometry.dispose()}parkingMarks.length=0;
+  const material=new THREE.LineBasicMaterial({color:0xf9edc4});
+  for(const p of slots){
+   const geometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(p.x-5,.06,p.z-22),new THREE.Vector3(p.x-5,.06,p.z+9),new THREE.Vector3(p.x+5,.06,p.z+9),new THREE.Vector3(p.x+5,.06,p.z-22)]);
+   const mark=new THREE.Line(geometry,material);scene.add(mark);parkingMarks.push(mark);
+  }markedCapacity=slots.length;
+ }
+ for(const [i,t] of [...trucks].sort((a,b)=>Number(a.id)-Number(b.id)).entries()){
+  const p=slots[i];if(!p){if(t.status==='Pátio')t.status='Aguardando vaga';if(t.status==='Aguardando vaga')t.mesh.visible=false;continue}
+  t.homeX=p.x;t.homeZ=p.z;if(t.status==='Aguardando vaga')t.status='Pátio';
+  if(t.status==='Pátio'){t.mesh.position.set(p.x,0,p.z);t.mesh.rotation.y=0;t.mesh.visible=true}
  }
 }
 function restoreGame(){
@@ -395,8 +397,8 @@ function restoreGame(){
  restoring=true;
  try{
   // Rebuild bought lots with existing controls; reimburse their construction during restoration.
-  for(let i=0;i<(saved.sideExpansions||0);i++){finance=1e12;document.getElementById('expand').click()}
-  for(let i=0;i<(saved.rearExpansions||0);i++){finance=1e12;document.getElementById('expandRear').click()}
+  for(let i=0;i<(saved.sideExpansions||0);i++){finance=1500000;document.getElementById('expand').click()}
+  for(let i=0;i<(saved.rearExpansions||0);i++){finance=1500000;document.getElementById('expandRear').click()}
   // Restore truck fleet from stable ids.
   const wanted=new Set((saved.trucks||[]).map(t=>t.id));
   for(const t of [...trucks])if(!wanted.has(t.id)){scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1)}
@@ -414,11 +416,13 @@ function restoreGame(){
     t.mesh.visible=t.status!=='Viagem';
    }
   }
-  finance=saved.finance;simMinutes=saved.simMinutes;shift=saved.shift;
+  finance=saved.finance>=999000000000?Math.max(0,50000000-(Math.max(0,(saved.nextTruckId||13)-13)*715000)-((saved.sideExpansions||0)+(saved.rearExpansions||0))*1500000):saved.finance;simMinutes=saved.simMinutes;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
   Object.assign(roleSalary,saved.roleSalary||{});Object.assign(staffRoles,saved.staffRoles||{});
+  for(const [id,st] of Object.entries(saved.facilities||{})){const f=facilities[id];if(!f)continue;f.group.position.set(st.x,0,st.z);f.x=st.x;f.z=st.z;f.rotation=st.rotation||0;f.group.rotation.y=f.rotation;f.level=st.level||1;f.floors=st.floors||1;f.expanded=st.expanded||0;for(let j=1;j<f.floors;j++){let y=(f.id==='fuel'?7:11)+(j-1)*7;box(f.w*.88,6.5,f.d*.88,white,0,y+3,0,f.group);box(f.w*.92,.65,f.d*.92,roof,0,y+6.5,0,f.group)}for(let j=1;j<f.level;j++)box(f.w*.85,.45,f.d*.85,gold,0,Math.max(12,f.floors*7+6)+j*.5,0,f.group);for(let j=0;j<f.expanded;j++){let x=f.w/2+5;let ext=box(10,8,f.d*.85,white,x,4,0,f.group),top=box(11,.8,f.d*.9,roof,x,8.5,0,f.group);f.additions.push([ext,top]);f.w+=10;}}
+  serviceTargets.Abastecendo={x:facilities.fuel.x,z:facilities.fuel.z+20};serviceTargets.Manutenção={x:facilities.workshop.x,z:facilities.workshop.z+33};serviceTargets.Borracharia={x:facilities.tires.x,z:facilities.tires.z+13};
   if(saved.camera){pos.set(saved.camera.x,saved.camera.y,saved.camera.z);yaw=saved.camera.yaw;pitch=saved.camera.pitch}
   const elapsedSeconds=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
   const completed=simulateAway(elapsedSeconds);
