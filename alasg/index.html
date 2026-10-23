@@ -384,10 +384,13 @@ function onOwnedLand(x,z){
  (sideExpansions>0&&x>=110&&x<=110+sideExpansions*65&&z>=-130&&z<=105)||
  (rearExpansions>0&&z>=-140-rearExpansions*75&&z<=-140&&x>=-114&&x<=110+sideExpansions*65);
 }
-function canPlaceParking(x,z,exclude){
- if(!onOwnedLand(x,z))return 'Terreno não comprado.';
- if(parkingSlots().some(p=>p!==exclude&&Math.abs(p.x-x)<11&&Math.abs(p.z-z)<31))return 'Vaga muito próxima de outra.';
- if(Object.values(facilities).some(f=>Math.abs(x-f.x)<f.w/2+6&&Math.abs(z-f.z)<f.d/2+18))return 'A vaga ocuparia uma instalação.';
+function parkingCorners(x,z,r){const c=Math.cos(r||0),sn=Math.sin(r||0);return [[-5,-22],[-5,9],[5,9],[5,-22]].map(([dx,dz])=>({x:x+dx*c-dz*sn,z:z+dx*sn+dz*c}))}
+function parkingOverlap(a,b){const ca=parkingCorners(a.x,a.z,a.rotation),cb=parkingCorners(b.x,b.z,b.rotation);for(const pts of [ca,cb])for(let i=0;i<4;i++){const p=pts[i],q=pts[(i+1)%4],ax=p.z-q.z,az=q.x-p.x;const aa=ca.map(v=>v.x*ax+v.z*az),bb=cb.map(v=>v.x*ax+v.z*az);if(Math.max(...aa)<=Math.min(...bb)+.5||Math.max(...bb)<=Math.min(...aa)+.5)return false;}return true}
+function canPlaceParking(x,z,exclude,rotation=0){
+ const corners=parkingCorners(x,z,rotation);
+ if(!corners.every(p=>onOwnedLand(p.x,p.z)))return 'Vaga fora do terreno comprado.';
+ if(parkingSlots().some(p=>p!==exclude&&parkingOverlap({x,z,rotation},p)))return 'Vagas sobrepostas. Deixe-as lado a lado.';
+ if(Object.values(facilities).some(f=>corners.some(p=>Math.abs(p.x-f.x)<f.w/2+2&&Math.abs(p.z-f.z)<f.d/2+2)))return 'A vaga ocuparia uma instalação.';
  return '';
 }
 function parkingMapPoint(e){const r=mapSvg.getBoundingClientRect(),vb=mapSvg.viewBox.baseVal;return {x:Math.round(wx(vb.x+(e.clientX-r.left)*vb.width/r.width)/5)*5,z:Math.round(wz(vb.y+(e.clientY-r.top)*vb.height/r.height)/5)*5}}
@@ -424,13 +427,13 @@ function reconcileYardCapacity(){
 }
 document.getElementById('parkingMode').onclick=()=>{parkingEditing=!parkingEditing;parkingAdding=false;refreshParkingUi();mapDraw()};
 document.getElementById('parkingAdd').onclick=()=>{parkingAdding=true;document.getElementById('parkingInfo').textContent='Clique no mapa para comprar e posicionar a vaga (R$ 25.000).'};
-document.getElementById('parkingRotate45').onclick=()=>{ensureParking();const p=parkingSlots().find(p=>p.id===selectedParking);if(!p)return record('Selecione uma vaga para girar.');p.rotation=((p.rotation||0)+Math.PI/4)%(Math.PI*2);markParkingDirty();record('Vaga '+p.id+' girada 45° sem custo.');};
-document.getElementById('parkingRotate').onclick=()=>{ensureParking();const p=parkingSlots().find(p=>p.id===selectedParking);if(!p)return record('Selecione uma vaga para girar.');p.rotation=((p.rotation||0)+Math.PI/2)%(Math.PI*2);markParkingDirty();record('Vaga '+p.id+' girada 90° sem custo.');};
+document.getElementById('parkingRotate45').onclick=()=>{ensureParking();const p=parkingSlots().find(p=>p.id===selectedParking);if(!p)return record('Selecione uma vaga para girar.');const angle=((p.rotation||0)+Math.PI/4)%(Math.PI*2),error=canPlaceParking(p.x,p.z,p,angle);if(error)return record(error);p.rotation=angle;markParkingDirty();record('Vaga '+p.id+' girada 45° sem custo.');};
+document.getElementById('parkingRotate').onclick=()=>{ensureParking();const p=parkingSlots().find(p=>p.id===selectedParking);if(!p)return record('Selecione uma vaga para girar.');const angle=((p.rotation||0)+Math.PI/2)%(Math.PI*2),error=canPlaceParking(p.x,p.z,p,angle);if(error)return record(error);p.rotation=angle;markParkingDirty();record('Vaga '+p.id+' girada 90° sem custo.');};
 document.getElementById('parkingRemove').onclick=()=>{ensureParking();const p=parkingSlots().find(p=>p.id===selectedParking);if(!p)return record('Selecione uma vaga.');if(p.truckId)return record('Vaga ocupada. Transfira o caminhão para outra vaga antes de remover.');customParking.splice(customParking.indexOf(p),1);selectedParking=null;markParkingDirty();record('Vaga removida, sem reembolso.')};
 document.getElementById('parkingAssign').onclick=()=>{ensureParking();const p=parkingSlots().find(p=>p.id===selectedParking),id=document.getElementById('parkingTruck').value;if(!p||!id)return record('Escolha uma vaga e um caminhão.');const old=parkingSlots().find(q=>q.truckId===id);const previous=p.truckId;if(old)old.truckId=previous||null;p.truckId=id;markParkingDirty();record('CAV-'+id+' designado à vaga '+p.id+'. Se estiver no pátio, seguirá até ela.')};
 mapSvg.addEventListener('pointerdown',e=>{if(!parkingEditing)return;const p=e.target.closest('[data-parking]');if(p){selectedParking=p.dataset.parking;dragParking=selectedParking;mapSvg.setPointerCapture(e.pointerId);refreshParkingUi();mapDraw()}else if(parkingAdding){ensureParking();const pt=parkingMapPoint(e),error=canPlaceParking(pt.x,pt.z,null);if(error)return record(error);if(finance<25000)return record('Caixa insuficiente para nova vaga.');finance-=25000;const id='V'+String(nextParkingId++).padStart(3,'0');customParking.push({id,x:pt.x,z:pt.z,truckId:null});selectedParking=id;parkingAdding=false;markParkingDirty();record('Vaga '+id+' comprada por R$ 25.000.')}},true);
 mapSvg.addEventListener('pointermove',e=>{if(!parkingEditing||!dragParking)return;const pt=parkingMapPoint(e);const p=parkingSlots().find(p=>p.id===dragParking);if(!p)return;p.previewX=pt.x;p.previewZ=pt.z;mapDraw()},true);
-mapSvg.addEventListener('pointerup',e=>{if(!dragParking)return;ensureParking();const p=parkingSlots().find(p=>p.id===dragParking);dragParking=null;if(!p)return;const x=p.previewX??p.x,z=p.previewZ??p.z;delete p.previewX;delete p.previewZ;const error=canPlaceParking(x,z,p);if(error){record(error);mapDraw();return}p.x=x;p.z=z;markParkingDirty();record('Vaga '+p.id+' reposicionada. O caminhão irá até o novo local.')},true);
+mapSvg.addEventListener('pointerup',e=>{if(!dragParking)return;ensureParking();const p=parkingSlots().find(p=>p.id===dragParking);dragParking=null;if(!p)return;const x=p.previewX??p.x,z=p.previewZ??p.z;delete p.previewX;delete p.previewZ;const error=canPlaceParking(x,z,p,p.rotation||0);if(error){record(error);mapDraw();return}p.x=x;p.z=z;markParkingDirty();record('Vaga '+p.id+' reposicionada. O caminhão irá até o novo local.')},true);
 function restoreGame(){
  let saved;
  try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){console.warn(e)}
@@ -458,7 +461,7 @@ function restoreGame(){
    }
   }
   finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;
-  if(!localStorage.getItem('alasg_cash_restore_50m_once_20261023')){finance=50000000;localStorage.setItem('alasg_cash_restore_50m_once_20261023','1');log.unshift('Correção autorizada: caixa restaurado para R$ 50.000.000.');}simMinutes=saved.simMinutes;shift=saved.shift;
+  if(!localStorage.getItem('alasg_cash_restore_50m_once_20261023')){finance=50000000;localStorage.setItem('alasg_cash_restore_50m_once_20261023','1');log.unshift('Correção autorizada: caixa restaurado para R$ 50.000.000.');}if(!localStorage.getItem('alasg_cash_fix_v2_20261023')&&finance<50000000){finance=50000000;localStorage.setItem('alasg_cash_fix_v2_20261023','1');}simMinutes=saved.simMinutes;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
