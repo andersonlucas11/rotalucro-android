@@ -453,7 +453,7 @@ function restoreGame(){
     t.mesh.visible=t.status!=='Viagem';
    }
   }
-  finance=saved.finance>=999000000000?Math.max(0,50000000-(Math.max(0,(saved.nextTruckId||13)-13)*715000)-((saved.sideExpansions||0)+(saved.rearExpansions||0))*1500000):saved.finance;simMinutes=saved.simMinutes;shift=saved.shift;
+  finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;simMinutes=saved.simMinutes;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
