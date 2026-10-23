@@ -453,7 +453,8 @@ function restoreGame(){
     t.mesh.visible=t.status!=='Viagem';
    }
   }
-  finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;simMinutes=saved.simMinutes;shift=saved.shift;
+  finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;
+  if(!localStorage.getItem('alasg_cash_restore_50m_once_20261023')){finance=50000000;localStorage.setItem('alasg_cash_restore_50m_once_20261023','1');log.unshift('Correção autorizada: caixa restaurado para R$ 50.000.000.');}simMinutes=saved.simMinutes;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
