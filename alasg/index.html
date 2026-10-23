@@ -207,7 +207,7 @@ document.getElementById('fleet').innerHTML=trucks.map(t=>`<div class="line"><spa
 // Rotas com curvas dentro do pátio: vaga -> corredor central -> acesso da portaria.
 // Orientação do caminhão usa a tangente do trecho, não uma translação reta.
 const gateOut={x:-8,z:130},gateIn={x:8,z:130};
-function routeFor(t,returning){const laneZ=t.homeZ+18;const out=[{x:t.homeX,z:t.homeZ},{x:t.homeX,z:laneZ},{x:0,z:laneZ},{x:-8,z:100},gateOut,{x:-8,z:151}];const inbound=[{x:8,z:151},gateIn,{x:8,z:100},{x:8,z:laneZ},{x:t.homeX,z:laneZ},{x:t.homeX,z:t.homeZ}];return returning?inbound:out}
+function routeFor(t,returning){const laneZ=t.homeZ+30;const out=[{x:t.homeX,z:t.homeZ},{x:t.homeX,z:laneZ},{x:0,z:laneZ},{x:-8,z:100},gateOut,{x:-8,z:151}];const inbound=[{x:8,z:151},gateIn,{x:8,z:100},{x:8,z:laneZ},{x:t.homeX,z:laneZ},{x:t.homeX,z:t.homeZ}];return returning?inbound:out}
 function beginRoute(t,returning){t.status=returning?'Entrando':'Saindo';t.route=routeFor(t,returning);t.routeIndex=0;t.mesh.visible=true;t.mesh.position.set(t.route[0].x,0,t.route[0].z);}
 function moveRoute(t,dt){let remaining=dt*7;while(remaining>0&&t.routeIndex<t.route.length-1){let a=t.route[t.routeIndex],b=t.route[t.routeIndex+1],dx=b.x-t.mesh.position.x,dz=b.z-t.mesh.position.z,dist=Math.hypot(dx,dz);if(dist<.01){t.routeIndex++;continue}let step=Math.min(dist,remaining);t.mesh.position.x+=dx/dist*step;t.mesh.position.z+=dz/dist*step;t.mesh.rotation.y=Math.atan2(dx,dz);remaining-=step;if(step>=dist-.001)t.routeIndex++}return t.routeIndex>=t.route.length-1}
 function dispatch(){let t=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35);if(!t)return record('Sem caminhão liberado: verifique combustível e manutenção.');t.trip++;t.duration=240+((Number(t.id)*43+t.trip*71)%480);t.returnAt=simMinutes+t.duration;t.plannedKm=320+((t.trip*71+Number(t.id)*13)%410);beginRoute(t,false);record('CAV-'+t.id+' despachado. Duração '+Math.floor(t.duration/60)+'h'+String(t.duration%60).padStart(2,'0')+' • retorno previsto '+fmtTime(t.returnAt)+'.')}
@@ -216,7 +216,7 @@ document.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{const id=b.d
 function resaleValue(t){return Math.max(170000,Math.round(715000*(1-Math.min(t.km,800000)/1100000)*(.72+.28*Math.min(t.health,t.tires)/100)))}
 function sellTruck(t){const price=resaleValue(t);finance+=price;scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1);record('CAV-'+t.id+' vendido por R$ '+price.toLocaleString('pt-BR')+'. Valor creditado no caixa.');}
 function beginServiceRoute(t,kind){const target=serviceTargets[kind];t.serviceKind=kind;t.status='Indo ao serviço';t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:8,z:t.mesh.position.z+18},{x:8,z:-18},{x:target.x,z:-18},{x:target.x,z:target.z}];t.routeIndex=0;t.mesh.visible=true;record('CAV-'+t.id+' seguindo para '+kind.toLowerCase()+'.')}
-function finishService(t){let kind=t.status;if(kind==='Abastecendo'){t.fuel=100;finance-=2200}else if(kind==='Manutenção'){t.health=100;finance-=4500}else if(kind==='Borracharia'){t.tires=100;finance-=3600;tireJobs++}t.status='Estacionando';t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.mesh.position.x,z:-18},{x:8,z:-18},{x:8,z:t.homeZ+18},{x:t.homeX,z:t.homeZ+18},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;record('CAV-'+t.id+' concluiu '+kind.toLowerCase()+' e retorna à vaga.')}
+function finishService(t){let kind=t.status;if(kind==='Abastecendo'){t.fuel=100;finance-=2200}else if(kind==='Manutenção'){t.health=100;finance-=4500}else if(kind==='Borracharia'){t.tires=100;finance-=3600;tireJobs++}t.status='Estacionando';t.route=returnToParkingRoute(t);t.routeIndex=0;record('CAV-'+t.id+' concluiu '+kind.toLowerCase()+' e retorna à vaga.')}
 
 // Editor de implantação: move objetos reais no cenário e atualiza destinos de serviços.
 const mapEditor=document.getElementById('mapEditor'),mapSvg=document.getElementById('siteMap');
@@ -293,7 +293,7 @@ for(const p of people){
  for(const child of p.g.children)if(child.userData?.humanMixer){child.userData.humanMixer.timeScale=p.moving?1:0;}
 }
 if(paused)return;
-simMinutes+=dt*speedMultiplier;clockSim+=dt;for(const t of trucks){if(t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'){t.serviceLeft-=dt*speedMultiplier;if(t.serviceLeft<=0)finishService(t);continue;}if(t.status==='Indo ao serviço'){if(moveRoute(t,dt)){t.status=t.serviceKind;t.serviceLeft=t.status==='Abastecendo'?25:t.status==='Borracharia'?55:80;record('CAV-'+t.id+' chegou à '+t.status.toLowerCase()+'.');}continue;}if(t.status==='Estacionando'){if(moveRoute(t,dt)){t.status='Pátio';t.mesh.rotation.y=t.homeRotation||0;if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35)beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');else record('CAV-'+t.id+' estacionado na vaga.');}continue;}if(t.status==='Movendo vaga'){if(!t.route||t.route.length<2){t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;}if(moveRoute(t,dt)){t.status='Pátio';t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=t.homeRotation||0;record('CAV-'+t.id+' chegou à vaga reposicionada.')}continue;}if(t.status==='Pátio'){if(Math.hypot(t.mesh.position.x-t.homeX,t.mesh.position.z-t.homeZ)<.1)t.mesh.rotation.y=t.homeRotation||0;continue;}if(t.status==='Saindo'){if(moveRoute(t,dt)){t.status='Viagem';t.mesh.visible=false;record('CAV-'+t.id+' cruzou a portaria e entrou na estrada. Previsão '+fmtTime(t.returnAt)+'.')}}else if(t.status==='Viagem'){if(simMinutes>=t.returnAt){beginRoute(t,true);record('CAV-'+t.id+' chegou à portaria e está entrando no pátio.')}}else if(t.status==='Entrando'){if(moveRoute(t,dt)){t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=t.homeRotation||0;t.status='Pátio';const km=t.plannedKm,revenue=km*8;t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35){beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');}else record('CAV-'+t.id+' estacionou após '+km+' km. Fretes ida/volta: R$ '+revenue.toLocaleString('pt-BR')+'.')}}}
+simMinutes+=dt*speedMultiplier;clockSim+=dt;for(const t of trucks){if(t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'){t.serviceLeft-=dt*speedMultiplier;if(t.serviceLeft<=0)finishService(t);continue;}if(t.status==='Indo ao serviço'){if(moveRoute(t,dt)){t.status=t.serviceKind;t.serviceLeft=t.status==='Abastecendo'?25:t.status==='Borracharia'?55:80;record('CAV-'+t.id+' chegou à '+t.status.toLowerCase()+'.');}continue;}if(t.status==='Estacionando'){if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35)beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');else record('CAV-'+t.id+' estacionado na vaga.');}continue;}if(t.status==='Movendo vaga'){if(!t.route||t.route.length<2){t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;}if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);record('CAV-'+t.id+' manobrou e estacionou na posição da vaga.')}continue;}if(t.status==='Pátio'){if(Math.hypot(t.mesh.position.x-t.homeX,t.mesh.position.z-t.homeZ)<.1)t.mesh.rotation.y=t.homeRotation||0;continue;}if(t.status==='Saindo'){if(moveRoute(t,dt)){t.status='Viagem';t.mesh.visible=false;record('CAV-'+t.id+' cruzou a portaria e entrou na estrada. Previsão '+fmtTime(t.returnAt)+'.')}}else if(t.status==='Viagem'){if(simMinutes>=t.returnAt){beginRoute(t,true);record('CAV-'+t.id+' chegou à portaria e está entrando no pátio.')}}else if(t.status==='Entrando'){if(moveRoute(t,dt)){parkTruckPrecisely(t);t.status='Pátio';const km=t.plannedKm,revenue=km*8;t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35){beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');}else record('CAV-'+t.id+' estacionou após '+km+' km. Fretes ida/volta: R$ '+revenue.toLocaleString('pt-BR')+'.')}}}
 if(autoRicardo&&Math.floor(simMinutes/45)!==Math.floor((simMinutes-dt*speedMultiplier)/45)&&trucks.some(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35))dispatch();if(clockSim>2){clockSim=0;drawPanel();saveGame()}}
 
 // ALASG V18: salvamento local e simulação de tempo decorrido entre sessões.
@@ -326,7 +326,7 @@ function completeOfflineTrip(t){
  const km=t.plannedKm||320,revenue=km*8;
  t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;
  t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);
- t.status='Pátio';t.mesh.visible=true;t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=t.homeRotation||0;
+ t.status='Pátio';t.mesh.visible=true;parkTruckPrecisely(t);
  if(t.pendingSale){sellTruck(t);return}
  if(t.fuel<35){finance-=2200;t.fuel=100}
  if(t.health<45){finance-=4500;t.health=100}
@@ -401,6 +401,9 @@ function refreshParkingUi(){
  const selector=document.getElementById('parkingTruck'),old=selector.value;selector.innerHTML='<option value="">Escolha o caminhão</option>'+trucks.map(t=>'<option value="'+t.id+'">CAV-'+t.id+' • '+t.status+'</option>').join('');selector.value=trucks.some(t=>t.id===old)?old:'';
 }
 function markParkingDirty(){markedSignature='';reconcileYardCapacity();mapDraw();refreshParkingUi();saveGame()}
+function parkingPose(p){const a=p.rotation||0;return {x:p.x-Math.sin(a)*11,z:p.z-Math.cos(a)*11}}
+function returnToParkingRoute(t){const a=t.homeRotation||0,dx=Math.sin(a),dz=Math.cos(a);return [{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.mesh.position.x,z:t.mesh.position.z+24},{x:t.homeX+dx*36,z:t.homeZ+dz*36},{x:t.homeX+dx*20,z:t.homeZ+dz*20},{x:t.homeX,z:t.homeZ}]}
+function parkTruckPrecisely(t){t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=((t.homeRotation||0)+Math.PI)%(Math.PI*2);t.mesh.visible=true}
 function reconcileYardCapacity(){
  const slots=parkingSlots(),signature=slots.map(p=>p.id+':'+p.x+','+p.z+','+(p.rotation||0)).join('|');
  if(signature!==markedSignature){
@@ -417,12 +420,12 @@ function reconcileYardCapacity(){
  for(const t of trucks){
   const p=slots.find(p=>p.truckId===t.id);
   if(!p){if(t.status==='Pátio'||t.status==='Movendo vaga')t.status='Aguardando vaga';if(t.status==='Aguardando vaga')t.mesh.visible=false;continue}
-  const changed=Math.abs(t.homeX-p.x)+Math.abs(t.homeZ-p.z)>1;const turned=Math.abs((t.homeRotation||0)-(p.rotation||0))>.001;
-  t.homeX=p.x;t.homeZ=p.z;t.homeRotation=p.rotation||0;
-  if(t.status==='Aguardando vaga'){t.status='Pátio';t.mesh.position.set(p.x,0,p.z);t.mesh.rotation.y=p.rotation||0;t.mesh.visible=true}
-  else if(t.status==='Pátio'&&changed&&!restoring){
-   t.status='Movendo vaga';const a=p.rotation||0,dx=Math.sin(a)*20,dz=Math.cos(a)*20;t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.mesh.position.x,z:t.mesh.position.z+18},{x:p.x+dx,z:p.z+dz},{x:p.x,z:p.z}];t.routeIndex=0;t.mesh.visible=true;
-  }else if(t.status==='Pátio'){t.mesh.position.set(p.x,0,p.z);t.mesh.rotation.y=p.rotation||0;t.mesh.visible=true}
+  const pose=parkingPose(p),changed=Math.hypot(t.homeX-pose.x,t.homeZ-pose.z)>1,turned=Math.abs((t.homeRotation||0)-(p.rotation||0))>.001;
+  t.homeX=pose.x;t.homeZ=pose.z;t.homeRotation=p.rotation||0;
+  if(t.status==='Aguardando vaga'){t.status='Pátio';parkTruckPrecisely(t)}
+  else if(t.status==='Pátio'&&(changed||turned)&&!restoring){
+   t.status='Movendo vaga';t.route=returnToParkingRoute(t);t.routeIndex=0;t.mesh.visible=true;
+  }else if(t.status==='Pátio'){parkTruckPrecisely(t)}
  }
 }
 document.getElementById('parkingMode').onclick=()=>{parkingEditing=!parkingEditing;parkingAdding=false;refreshParkingUi();mapDraw()};
@@ -454,7 +457,7 @@ function restoreGame(){
     t={mesh};trucks.push(t);
    }
    Object.assign(t,st);
-   t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=t.homeRotation||0;
+   parkTruckPrecisely(t);
    t.mesh.visible=st.status!=='Viagem'&&st.status!=='Aguardando vaga';
    if(['Saindo','Entrando','Indo ao serviço','Estacionando'].includes(t.status)){
     t.status=t.returnAt>saved.simMinutes?'Viagem':'Pátio';
