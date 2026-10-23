@@ -380,9 +380,11 @@ function parkingSlots(){
 }
 function ensureParking(){if(!customParking){customParking=parkingSlots().map(p=>({...p}));nextParkingId=customParking.length+1}}
 function onOwnedLand(x,z){
- return (x>=-114&&x<=108&&z>=-130&&z<=105)||
- (sideExpansions>0&&x>=110&&x<=110+sideExpansions*65&&z>=-130&&z<=105)||
- (rearExpansions>0&&z>=-140-rearExpansions*75&&z<=-140&&x>=-114&&x<=110+sideExpansions*65);
+ // Os limites acompanham exatamente as bordas desenhadas no mapa, sem recuos artificiais.
+ const left=-120,right=120+sideExpansions*65,front=130,back=-140-rearExpansions*75;
+ return (x>=left&&x<=120&&z>=-140&&z<=front)||
+ (sideExpansions>0&&x>=120&&x<=right&&z>=-140&&z<=front)||
+ (rearExpansions>0&&x>=left&&x<=right&&z>=back&&z<=-140);
 }
 function parkingCorners(x,z,r){const c=Math.cos(r||0),sn=Math.sin(r||0);return [[-5,-22],[-5,9],[5,9],[5,-22]].map(([dx,dz])=>({x:x+dx*c+dz*sn,z:z-dx*sn+dz*c}))}
 function parkingOverlap(a,b){const ca=parkingCorners(a.x,a.z,a.rotation),cb=parkingCorners(b.x,b.z,b.rotation);for(const pts of [ca,cb])for(let i=0;i<4;i++){const p=pts[i],q=pts[(i+1)%4],ax=p.z-q.z,az=q.x-p.x;const aa=ca.map(v=>v.x*ax+v.z*az),bb=cb.map(v=>v.x*ax+v.z*az);if(Math.max(...aa)<=Math.min(...bb)+.5||Math.max(...bb)<=Math.min(...aa)+.5)return false;}return true}
