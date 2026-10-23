@@ -384,7 +384,7 @@ function onOwnedLand(x,z){
  (sideExpansions>0&&x>=110&&x<=110+sideExpansions*65&&z>=-130&&z<=105)||
  (rearExpansions>0&&z>=-140-rearExpansions*75&&z<=-140&&x>=-114&&x<=110+sideExpansions*65);
 }
-function parkingCorners(x,z,r){const c=Math.cos(r||0),sn=Math.sin(r||0);return [[-5,9],[-5,-22],[5,-22],[5,9]].map(([dx,dz])=>({x:x+dx*c-dz*sn,z:z+dx*sn+dz*c}))}
+function parkingCorners(x,z,r){const c=Math.cos(r||0),sn=Math.sin(r||0);return [[-5,-22],[-5,9],[5,9],[5,-22]].map(([dx,dz])=>({x:x+dx*c+dz*sn,z:z-dx*sn+dz*c}))}
 function parkingOverlap(a,b){const ca=parkingCorners(a.x,a.z,a.rotation),cb=parkingCorners(b.x,b.z,b.rotation);for(const pts of [ca,cb])for(let i=0;i<4;i++){const p=pts[i],q=pts[(i+1)%4],ax=p.z-q.z,az=q.x-p.x;const aa=ca.map(v=>v.x*ax+v.z*az),bb=cb.map(v=>v.x*ax+v.z*az);if(Math.max(...aa)<=Math.min(...bb)+.5||Math.max(...bb)<=Math.min(...aa)+.5)return false;}return true}
 function canPlaceParking(x,z,exclude,rotation=0){
  const corners=parkingCorners(x,z,rotation);
@@ -401,16 +401,16 @@ function refreshParkingUi(){
  const selector=document.getElementById('parkingTruck'),old=selector.value;selector.innerHTML='<option value="">Escolha o caminhão</option>'+trucks.map(t=>'<option value="'+t.id+'">CAV-'+t.id+' • '+t.status+'</option>').join('');selector.value=trucks.some(t=>t.id===old)?old:'';
 }
 function markParkingDirty(){markedSignature='';reconcileYardCapacity();mapDraw();refreshParkingUi();saveGame()}
-function parkingPose(p){const a=p.rotation||0;return {x:p.x-Math.sin(a)*13.25,z:p.z-Math.cos(a)*13.25}}
-function returnToParkingRoute(t){const a=t.homeRotation||0,dx=Math.sin(a),dz=Math.cos(a);return [{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.mesh.position.x,z:t.mesh.position.z+24},{x:t.homeX+dx*36,z:t.homeZ+dz*36},{x:t.homeX+dx*20,z:t.homeZ+dz*20},{x:t.homeX,z:t.homeZ}]}
-function parkTruckPrecisely(t){t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=((t.homeRotation||0)+Math.PI)%(Math.PI*2);t.mesh.visible=true}
+function parkingPose(p){const a=p.rotation||0;return {x:p.x,z:p.z}}
+function returnToParkingRoute(t){const a=t.homeRotation||0,dx=-Math.sin(a),dz=-Math.cos(a);return [{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.mesh.position.x,z:t.mesh.position.z+24},{x:t.homeX+dx*36,z:t.homeZ+dz*36},{x:t.homeX+dx*20,z:t.homeZ+dz*20},{x:t.homeX,z:t.homeZ}]}
+function parkTruckPrecisely(t){t.mesh.position.set(t.homeX,0,t.homeZ);t.mesh.rotation.y=t.homeRotation||0;t.mesh.visible=true}
 function reconcileYardCapacity(){
  const slots=parkingSlots(),signature=slots.map(p=>p.id+':'+p.x+','+p.z+','+(p.rotation||0)).join('|');
  if(signature!==markedSignature){
   for(const m of parkingMarks){scene.remove(m);m.geometry.dispose()}parkingMarks.length=0;
   const material=new THREE.LineBasicMaterial({color:0xffedaa});
   for(const p of slots){
-   const geometry=new THREE.BufferGeometry().setFromPoints([...[[-5,9],[-5,-22],[5,-22],[5,9]].map(([dx,dz])=>new THREE.Vector3(p.x+dx*Math.cos(p.rotation||0)-dz*Math.sin(p.rotation||0),.06,p.z+dx*Math.sin(p.rotation||0)+dz*Math.cos(p.rotation||0)))]);
+   const geometry=new THREE.BufferGeometry().setFromPoints([...[[-5,-22],[-5,9],[5,9],[5,-22]].map(([dx,dz])=>new THREE.Vector3(p.x+dx*Math.cos(p.rotation||0)+dz*Math.sin(p.rotation||0),.06,p.z-dx*Math.sin(p.rotation||0)+dz*Math.cos(p.rotation||0)))]);
    const mark=new THREE.Line(geometry,material);scene.add(mark);parkingMarks.push(mark);
   }markedSignature=signature;
  }
