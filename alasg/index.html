@@ -388,12 +388,12 @@ function parkingCorners(x,z,r){const c=Math.cos(r||0),sn=Math.sin(r||0);return [
 function parkingOverlap(a,b){const ca=parkingCorners(a.x,a.z,a.rotation),cb=parkingCorners(b.x,b.z,b.rotation);for(const pts of [ca,cb])for(let i=0;i<4;i++){const p=pts[i],q=pts[(i+1)%4],ax=p.z-q.z,az=q.x-p.x;const aa=ca.map(v=>v.x*ax+v.z*az),bb=cb.map(v=>v.x*ax+v.z*az);if(Math.max(...aa)<=Math.min(...bb)+.5||Math.max(...bb)<=Math.min(...aa)+.5)return false;}return true}
 function canPlaceParking(x,z,exclude,rotation=0){
  const corners=parkingCorners(x,z,rotation);
- if(!corners.every(p=>onOwnedLand(p.x,p.z)))return 'Vaga fora do terreno comprado.';
+ if(!corners.every(p=>onOwnedLand(p.x,p.z)))return 'Vaga fora do terreno comprado (considere o tamanho inteiro da vaga).';
  if(parkingSlots().some(p=>p!==exclude&&parkingOverlap({x,z,rotation},p)))return 'Vagas sobrepostas. Deixe-as lado a lado.';
  if(Object.values(facilities).some(f=>corners.some(p=>Math.abs(p.x-f.x)<f.w/2+2&&Math.abs(p.z-f.z)<f.d/2+2)))return 'A vaga ocuparia uma instalação.';
  return '';
 }
-function parkingMapPoint(e){const r=mapSvg.getBoundingClientRect(),vb=mapSvg.viewBox.baseVal;return {x:Math.round(wx(vb.x+(e.clientX-r.left)*vb.width/r.width)/5)*5,z:Math.round(wz(vb.y+(e.clientY-r.top)*vb.height/r.height)/5)*5}}
+function parkingMapPoint(e){const r=mapSvg.getBoundingClientRect(),vb=mapSvg.viewBox.baseVal;const mx=vb.x+(e.clientX-r.left)*vb.width/r.width,my=vb.y+(e.clientY-r.top)*vb.height/r.height;return {x:Math.round(wx(mx)),z:Math.round(wz(my))}}
 function refreshParkingUi(){
  const ui=document.getElementById('parkingControls');if(!ui)return;ui.hidden=!parkingEditing;
  const slot=parkingSlots().find(p=>p.id===selectedParking);
