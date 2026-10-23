@@ -465,7 +465,7 @@ function restoreGame(){
    }
   }
   finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;
-  if(!localStorage.getItem('alasg_cash_restore_50m_once_20261023')){finance=50000000;localStorage.setItem('alasg_cash_restore_50m_once_20261023','1');log.unshift('Correção autorizada: caixa restaurado para R$ 50.000.000.');}if(!localStorage.getItem('alasg_cash_fix_v2_20261023')&&finance<50000000){finance=50000000;localStorage.setItem('alasg_cash_fix_v2_20261023','1');}simMinutes=saved.simMinutes;shift=saved.shift;
+  simMinutes=saved.simMinutes;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
@@ -474,7 +474,8 @@ function restoreGame(){
   for(const [id,st] of Object.entries(saved.facilities||{})){const f=facilities[id];if(!f)continue;f.group.position.set(st.x,0,st.z);f.x=st.x;f.z=st.z;f.rotation=st.rotation||0;f.group.rotation.y=f.rotation;f.level=st.level||1;f.floors=st.floors||1;f.expanded=st.expanded||0;for(let j=1;j<f.floors;j++){let y=(f.id==='fuel'?7:11)+(j-1)*7;box(f.w*.88,6.5,f.d*.88,white,0,y+3,0,f.group);box(f.w*.92,.65,f.d*.92,roof,0,y+6.5,0,f.group)}for(let j=1;j<f.level;j++)box(f.w*.85,.45,f.d*.85,gold,0,Math.max(12,f.floors*7+6)+j*.5,0,f.group);for(let j=0;j<f.expanded;j++){let x=f.w/2+5;let ext=box(10,8,f.d*.85,white,x,4,0,f.group),top=box(11,.8,f.d*.9,roof,x,8.5,0,f.group);f.additions.push([ext,top]);f.w+=10;}}
   serviceTargets.Abastecendo={x:facilities.fuel.x,z:facilities.fuel.z+20};serviceTargets.Manutenção={x:facilities.workshop.x,z:facilities.workshop.z+33};serviceTargets.Borracharia={x:facilities.tires.x,z:facilities.tires.z+13};
   if(saved.camera){pos.set(saved.camera.x,saved.camera.y,saved.camera.z);yaw=saved.camera.yaw;pitch=saved.camera.pitch}
-  const elapsedSeconds=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
+  const importedFromCloud=localStorage.getItem('alasg_cloud_import_pending_v1')==='1';
+  const elapsedSeconds=importedFromCloud?0:Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
   const completed=simulateAway(elapsedSeconds);
   reconcileYardCapacity();
   log.unshift('Progresso offline: '+Math.floor(elapsedSeconds/60)+' min ausente • '+completed+' viagens concluídas • Ricardo '+(autoRicardo?'ligado':'desligado')+'.');
@@ -484,7 +485,7 @@ function restoreGame(){
   mapDraw();
   drawPanel();
  }catch(e){restoreFailed=true;console.error('Erro ao recuperar jogo',e);alert('Erro ao carregar a partida. Salvamento original preservado.')} 
- finally{restoring=false;if(!restoreFailed)saveGame()}
+ finally{restoring=false;if(!restoreFailed){localStorage.removeItem('alasg_cloud_import_pending_v1');saveGame()}}
 }
 restoreGame();
 reconcileYardCapacity();
@@ -500,7 +501,7 @@ document.body.appendChild(saveButton);
 window.ALASGCloudBridge={
  getSave(){saveGame();return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')},
  getLocal(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){return null}},
- installCloud(data){if(!data||data.version!==18||!Array.isArray(data.trucks)||!data.trucks.length)throw Error('Salvamento inválido');const current=localStorage.getItem(SAVE_KEY);if(current){localStorage.setItem('alasg_pre_cloud_import_'+Date.now(),current);localStorage.setItem(BACKUP_KEY,current)}localStorage.setItem(SAVE_KEY,JSON.stringify(data));}
+ installCloud(data){if(!data||data.version!==18||!Array.isArray(data.trucks)||!data.trucks.length)throw Error('Salvamento inválido');const current=localStorage.getItem(SAVE_KEY);if(current){localStorage.setItem('alasg_pre_cloud_import_'+Date.now(),current);localStorage.setItem(BACKUP_KEY,current)}localStorage.setItem('alasg_cloud_import_pending_v1','1');localStorage.setItem(SAVE_KEY,JSON.stringify({...data,savedAt:Date.now()}));}
 };
 
 
