@@ -215,8 +215,8 @@ document.getElementById('menuBtn').onclick=()=>{const m=document.getElementById(
 document.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{const id=b.dataset.panel;const ops=document.getElementById('ops');ops.open=true;for(const k of ['fleet','tires','people','management','history'])document.getElementById(k).hidden=k!==id;document.getElementById('menu').hidden=true;ops.style.visibility='visible';ops.scrollTop=0;drawPanel();});
 function resaleValue(t){return Math.max(170000,Math.round(715000*(1-Math.min(t.km,800000)/1100000)*(.72+.28*Math.min(t.health,t.tires)/100)))}
 function sellTruck(t){const price=resaleValue(t);finance+=price;scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1);record('CAV-'+t.id+' vendido por R$ '+price.toLocaleString('pt-BR')+'. Valor creditado no caixa.');}
-function beginServiceRoute(t,kind){const target=serviceTargets[kind];t.serviceKind=kind;t.status='Indo ao serviço';t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:8,z:t.mesh.position.z+18},{x:8,z:-18},{x:target.x,z:-18},{x:target.x,z:target.z}];t.routeIndex=0;t.mesh.visible=true;record('CAV-'+t.id+' seguindo para '+kind.toLowerCase()+'.')}
-function finishService(t){let kind=t.status;if(kind==='Abastecendo'){t.fuel=100;finance-=2200}else if(kind==='Manutenção'){t.health=100;finance-=4500}else if(kind==='Borracharia'){t.tires=100;finance-=3600;tireJobs++}t.status='Estacionando';t.route=returnToParkingRoute(t);t.routeIndex=0;record('CAV-'+t.id+' concluiu '+kind.toLowerCase()+' e retorna à vaga.')}
+function beginServiceRoute(t,kind){const target=serviceTargets[kind];if(!target)return record('Setor indisponível: '+kind);t.serviceKind=kind;t.status='Indo ao serviço';t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:8,z:t.mesh.position.z+18},{x:8,z:-18},{x:target.x,z:-18},{x:target.x,z:target.z}];t.routeIndex=0;t.mesh.visible=true;record('CAV-'+t.id+' seguindo para '+kind.toLowerCase()+'.')}
+function finishService(t){let kind=t.status;if(kind==='Lavando'){finance-=350}else if(kind==='Abastecendo'){t.fuel=100;finance-=2200}else if(kind==='Manutenção'){t.health=100;finance-=4500}else if(kind==='Borracharia'){t.tires=100;finance-=3600;tireJobs++}t.status='Estacionando';t.route=returnToParkingRoute(t);t.routeIndex=0;record('CAV-'+t.id+' concluiu '+kind.toLowerCase()+' e retorna à vaga.')}
 
 // Editor de implantação: move objetos reais no cenário e atualiza destinos de serviços.
 const mapEditor=document.getElementById('mapEditor'),mapSvg=document.getElementById('siteMap');
@@ -243,7 +243,7 @@ let dx=px-f.x,dz=pz-f.z;f.group.position.x+=dx;f.group.position.z+=dz;f.x=px;f.z
 if(f.id==='fuel'){serviceTargets.Abastecendo={x:px,z:pz};}
 if(f.id==='workshop'){serviceTargets['Manutenção']={x:px,z:pz+f.d*.35};}if(f.id==='tires'){serviceTargets['Borracharia']={x:px,z:pz+f.d*.35};}
 mapDraw();detailsFacility();record(f.name+' transferida no cenário 3D. Custo: R$ 75.000.');}
-const serviceTargets={'Abastecendo':{x:-52,z:-52},'Manutenção':{x:58,z:-42},'Borracharia':{x:82,z:-7}};
+const serviceTargets={'Abastecendo':{x:-52,z:-52},'Manutenção':{x:58,z:-42},'Borracharia':{x:82,z:-7},'Lavando':{x:-92,z:-65}};
 document.getElementById('mapOpen').onclick=()=>{mapEditor.hidden=false;document.getElementById('menu').hidden=true;document.getElementById('ops').style.visibility='hidden';mapDraw()};
 document.getElementById('mapClose').onclick=()=>{mapEditor.hidden=true;document.getElementById('ops').style.visibility='visible'};
 document.getElementById('moveSave').onclick=moveFacility;
@@ -293,11 +293,12 @@ for(const p of people){
  for(const child of p.g.children)if(child.userData?.humanMixer){child.userData.humanMixer.timeScale=p.moving?1:0;}
 }
 if(paused)return;
-simMinutes+=dt*speedMultiplier;clockSim+=dt;for(const t of trucks){if(t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'){t.serviceLeft-=dt*speedMultiplier;if(t.serviceLeft<=0)finishService(t);continue;}if(t.status==='Indo ao serviço'){if(moveRoute(t,dt)){t.status=t.serviceKind;t.serviceLeft=t.status==='Abastecendo'?25:t.status==='Borracharia'?55:80;record('CAV-'+t.id+' chegou à '+t.status.toLowerCase()+'.');}continue;}if(t.status==='Estacionando'){if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35)beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');else record('CAV-'+t.id+' estacionado na vaga.');}continue;}if(t.status==='Movendo vaga'){if(!t.route||t.route.length<2){t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;}if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);record('CAV-'+t.id+' manobrou e estacionou na posição da vaga.')}continue;}if(t.status==='Pátio'){parkTruckPrecisely(t);continue;}if(t.status==='Saindo'){if(moveRoute(t,dt)){t.status='Viagem';t.mesh.visible=false;record('CAV-'+t.id+' cruzou a portaria e entrou na estrada. Previsão '+fmtTime(t.returnAt)+'.')}}else if(t.status==='Viagem'){if(simMinutes>=t.returnAt){beginRoute(t,true);record('CAV-'+t.id+' chegou à portaria e está entrando no pátio.')}}else if(t.status==='Entrando'){if(moveRoute(t,dt)){parkTruckPrecisely(t);t.status='Pátio';const km=t.plannedKm,revenue=km*8;t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35){beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');}else record('CAV-'+t.id+' estacionou após '+km+' km. Fretes ida/volta: R$ '+revenue.toLocaleString('pt-BR')+'.')}}}
-if(autoRicardo&&Math.floor(simMinutes/45)!==Math.floor((simMinutes-dt*speedMultiplier)/45)&&trucks.some(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35))dispatch();if(clockSim>2){clockSim=0;drawPanel();saveGame()}}
+simMinutes+=dt*speedMultiplier;clockSim+=dt;for(const t of trucks){if(t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'||t.status==='Lavando'){t.serviceLeft-=dt*speedMultiplier;if(t.serviceLeft<=0)finishService(t);continue;}if(t.status==='Indo ao serviço'){if(moveRoute(t,dt)){t.status=t.serviceKind;t.serviceLeft=t.status==='Abastecendo'?25:t.status==='Borracharia'?55:t.status==='Lavando'?45:80;record('CAV-'+t.id+' chegou à '+t.status.toLowerCase()+'.');}continue;}if(t.status==='Estacionando'){if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35)beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');else record('CAV-'+t.id+' estacionado na vaga.');}continue;}if(t.status==='Movendo vaga'){if(!t.route||t.route.length<2){t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;}if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);record('CAV-'+t.id+' manobrou e estacionou na posição da vaga.')}continue;}if(t.status==='Pátio'){parkTruckPrecisely(t);continue;}if(t.status==='Saindo'){if(moveRoute(t,dt)){t.status='Viagem';t.mesh.visible=false;record('CAV-'+t.id+' cruzou a portaria e entrou na estrada. Previsão '+fmtTime(t.returnAt)+'.')}}else if(t.status==='Viagem'){if(simMinutes>=t.returnAt){beginRoute(t,true);record('CAV-'+t.id+' chegou à portaria e está entrando no pátio.')}}else if(t.status==='Entrando'){if(moveRoute(t,dt)){parkTruckPrecisely(t);t.status='Pátio';const km=t.plannedKm,revenue=km*8;t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35){beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');}else record('CAV-'+t.id+' estacionou após '+km+' km. Fretes ida/volta: R$ '+revenue.toLocaleString('pt-BR')+'.')}}}
+if(autoRicardo&&simMinutes>=nextRicardoDispatch){nextRicardoDispatch=simMinutes+45;const available=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35);if(available)dispatch();else{const service=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&(t.fuel<35||t.health<45||t.tires<35));if(service)beginServiceRoute(service,service.fuel<35?'Abastecendo':service.health<45?'Manutenção':'Borracharia');}}if(clockSim>2){clockSim=0;drawPanel();saveGame()}}
 
 // ALASG V18: salvamento local e simulação de tempo decorrido entre sessões.
 // Navegadores suspendem JavaScript com a página fechada: os eventos são calculados ao voltar.
+let nextRicardoDispatch=simMinutes+5;
 const SAVE_KEY='alasg_v18_company_state';
 const BACKUP_KEY='alasg_v18_company_state_backup';
 const HISTORY_KEY='alasg_v18_company_state_history';
@@ -341,11 +342,11 @@ function simulateAway(seconds){
   if(t.status==='Viagem'||t.status==='Saindo'||t.status==='Entrando'){
    if((t.returnAt||simMinutes)<=finish){completeOfflineTrip(t);events++}
    else {t.status='Viagem';t.mesh.visible=false}
-  }else if(t.status==='Indo ao serviço'||t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'||t.status==='Estacionando'){
+  }else if(t.status==='Indo ao serviço'||t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'||t.status==='Lavando'||t.status==='Estacionando'){
    t.status='Pátio';t.mesh.visible=true;t.mesh.position.set(t.homeX,0,t.homeZ);
    if(t.serviceKind==='Abastecendo'||t.fuel<35){finance-=2200;t.fuel=100}
    if(t.serviceKind==='Manutenção'||t.health<45){finance-=4500;t.health=100}
-   if(t.serviceKind==='Borracharia'||t.tires<35){finance-=3600;t.tires=100;tireJobs++}
+   if(t.serviceKind==='Borracharia'||t.tires<35){finance-=3600;t.tires=100;tireJobs++}if(t.serviceKind==='Lavando')finance-=350
    if(t.pendingSale)sellTruck(t);
   }
  }
@@ -467,14 +468,14 @@ function restoreGame(cloudOverride=null){
    }
   }
   finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;
-  simMinutes=saved.simMinutes;shift=saved.shift;
+  simMinutes=saved.simMinutes;nextRicardoDispatch=simMinutes+5;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
   Object.assign(roleSalary,saved.roleSalary||{});Object.assign(staffRoles,saved.staffRoles||{});
   if(Array.isArray(saved.parkingData)){customParking=saved.parkingData.map(p=>({id:p.id,x:Number(p.x),z:Number(p.z),rotation:Number(p.rotation)||0,truckId:p.truckId||null}));nextParkingId=Math.max(1,...customParking.map(p=>Number(String(p.id).replace(/[^0-9]/g,''))||0))+1;}
   for(const [id,st] of Object.entries(saved.facilities||{})){const f=facilities[id];if(!f)continue;f.group.position.set(st.x,0,st.z);f.x=st.x;f.z=st.z;f.rotation=st.rotation||0;f.group.rotation.y=f.rotation;f.level=st.level||1;f.floors=st.floors||1;f.expanded=st.expanded||0;for(let j=1;j<f.floors;j++){let y=(f.id==='fuel'?7:11)+(j-1)*7;box(f.w*.88,6.5,f.d*.88,white,0,y+3,0,f.group);box(f.w*.92,.65,f.d*.92,roof,0,y+6.5,0,f.group)}for(let j=1;j<f.level;j++)box(f.w*.85,.45,f.d*.85,gold,0,Math.max(12,f.floors*7+6)+j*.5,0,f.group);for(let j=0;j<f.expanded;j++){let x=f.w/2+5;let ext=box(10,8,f.d*.85,white,x,4,0,f.group),top=box(11,.8,f.d*.9,roof,x,8.5,0,f.group);f.additions.push([ext,top]);f.w+=10;}}
-  serviceTargets.Abastecendo={x:facilities.fuel.x,z:facilities.fuel.z+20};serviceTargets.Manutenção={x:facilities.workshop.x,z:facilities.workshop.z+33};serviceTargets.Borracharia={x:facilities.tires.x,z:facilities.tires.z+13};
+  serviceTargets.Abastecendo={x:facilities.fuel.x,z:facilities.fuel.z+20};serviceTargets.Manutenção={x:facilities.workshop.x,z:facilities.workshop.z+33};serviceTargets.Borracharia={x:facilities.tires.x,z:facilities.tires.z+13};serviceTargets.Lavando={x:facilities.wash.x,z:facilities.wash.z+18};
   if(saved.camera){pos.set(saved.camera.x,saved.camera.y,saved.camera.z);yaw=saved.camera.yaw;pitch=saved.camera.pitch}
   const importedFromCloud=!!cloudOverride||localStorage.getItem('alasg_cloud_import_pending_v1')==='1';
   const elapsedSeconds=importedFromCloud?0:Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-saved.savedAt)/1000));
@@ -550,6 +551,15 @@ rebuildButton.onclick=()=>{
  }catch(e){finance=originalFinance;console.error('Reconstrução',e);alert('Erro na reconstrução: '+e.message+'. Há uma cópia de segurança anterior disponível em Recuperar progresso.')}
 };
 
+
+// Vagas operacionais temporárias junto às instalações (não consomem as 50 vagas do pátio).
+const serviceBayPanel=document.createElement('div');
+serviceBayPanel.style.cssText='position:fixed;left:12px;top:225px;z-index:33;background:#123c33;color:white;border:1px solid #8bc9b0;border-radius:9px;padding:9px;max-width:260px;font-size:12px';
+serviceBayPanel.innerHTML='<b>🚛 Vagas de atendimento</b><div style="margin-top:6px">Escolha um caminhão e o setor:</div><select id="serviceBayTruck" style="width:100%;margin:5px 0"></select><select id="serviceBayKind" style="width:100%;margin:5px 0"><option value="Abastecendo">⛽ Abastecimento</option><option value="Borracharia">🛞 Borracharia</option><option value="Manutenção">🔧 Oficina</option><option value="Lavando">🧽 Lavador</option></select><button id="serviceBaySend" style="width:100%;padding:7px;background:#1b8060;color:white;border:0;border-radius:5px">Enviar para vaga do setor</button><div id="serviceBayStatus" style="margin-top:5px"></div>';
+document.body.appendChild(serviceBayPanel);
+function refreshServiceBay(){const sel=document.getElementById('serviceBayTruck'),old=sel.value;sel.innerHTML=trucks.filter(t=>t.status==='Pátio').map(t=>'<option value="'+t.id+'">CAV-'+t.id+'</option>').join('');if([...sel.options].some(o=>o.value===old))sel.value=old;document.getElementById('serviceBayStatus').textContent=trucks.filter(t=>['Indo ao serviço','Abastecendo','Borracharia','Manutenção','Lavando'].includes(t.status)).map(t=>'CAV-'+t.id+': '+(t.status==='Indo ao serviço'?t.serviceKind:t.status)).join(' • ')||'Nenhum veículo em atendimento'}
+document.getElementById('serviceBaySend').onclick=()=>{const id=document.getElementById('serviceBayTruck').value,kind=document.getElementById('serviceBayKind').value,t=trucks.find(t=>t.id===id&&t.status==='Pátio');if(!t)return alert('Selecione um caminhão estacionado.');if(trucks.some(v=>v!==t&&['Indo ao serviço',kind].includes(v.status)&&v.serviceKind===kind))return alert('Vaga de atendimento ocupada neste setor.');beginServiceRoute(t,kind);refreshServiceBay();};
+setInterval(refreshServiceBay,2500);refreshServiceBay();
 const pairedLayoutButton=document.createElement('button');
 pairedLayoutButton.textContent='🅿️ Organizar vagas em V (6 fileiras)';
 pairedLayoutButton.style.cssText='position:fixed;right:12px;bottom:104px;z-index:35;background:#165343;color:white;border:1px solid #b7dfc7;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
