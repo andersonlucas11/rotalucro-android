@@ -502,6 +502,52 @@ const saveButton=document.createElement('button');
 saveButton.textContent='💾 Salvar jogo';saveButton.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:30;padding:9px 12px;background:#176f52;color:white;border:1px solid #a9eac9;border-radius:9px;font-weight:bold;cursor:pointer';
 saveButton.onclick=()=>{const ok=saveGame();document.getElementById('toast').textContent=ok?'✓ Jogo salvo neste navegador.':'⚠️ Navegador bloqueou o salvamento.'};
 document.body.appendChild(saveButton);
+
+const rebuildButton=document.createElement('button');
+rebuildButton.textContent='🏗️ Reconstruir pátio perdido';
+rebuildButton.style.cssText='position:fixed;bottom:60px;right:12px;z-index:34;background:#78571a;color:white;border:1px solid #f6d98a;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
+document.body.appendChild(rebuildButton);
+rebuildButton.onclick=()=>{
+ if(trucks.length>50||sideExpansions>2||rearExpansions>2){alert('Sua partida já ultrapassa parte da reconstrução solicitada. Não vou apagar progresso.');return}
+ if(!confirm('RECONSTRUÇÃO DA PARTIDA PERDIDA\\n\\n50 caminhões • 50 vagas em V • 2 expansões laterais + 2 nos fundos • estruturas lado a lado no fundo.\\n\\nNão será cobrado novamente. O saldo atual será preservado.\\n\\nAs posições exatas das vagas perdidas são uma reconstrução aproximada, que poderá editar depois. Uma cópia integral será criada antes. Deseja continuar?'))return;
+ const before=JSON.stringify(snapshot()),originalFinance=finance;
+ try{
+  localStorage.setItem('alasg_before_rebuild_'+Date.now(),before);
+  localStorage.setItem(BACKUP_KEY,before);
+  const existing=trucks.length;
+  for(let i=sideExpansions;i<2;i++){finance=1500000;document.getElementById('expand').click()}
+  for(let i=rearExpansions;i<2;i++){finance=1500000;document.getElementById('expandRear').click()}
+  ensureParking();
+  const slots=[];
+  // Duas alas simétricas de 25 vagas cada, formando um V no mapa.
+  for(let row=0;row<5;row++)for(let col=0;col<5;col++){
+   const x=-106+col*20+row*3,z=91-row*47;
+   slots.push({id:'V'+String(slots.length+1).padStart(3,'0'),x,z,rotation:-Math.PI/4,truckId:null});
+  }
+  for(let row=0;row<5;row++)for(let col=0;col<5;col++){
+   const x=28+col*20-row*3,z=91-row*47;
+   slots.push({id:'V'+String(slots.length+1).padStart(3,'0'),x,z,rotation:Math.PI/4,truckId:null});
+  }
+  // Conservar caminhões existentes e criar somente os faltantes.
+  while(trucks.length<50){
+   const n=Math.max(nextTruckId,...trucks.map(t=>Number(t.id)+1));nextTruckId=n+1;
+   const mesh=truck(0,0,n-1);
+   trucks.push({mesh,brand:mesh.userData.brand,id:String(n).padStart(4,'0'),status:'Pátio',progress:0,routeProgress:0,duration:0,remaining:0,routeIndex:0,km:0,trip:0,earnings:0,fuel:100,health:100,tires:100,needs:'',homeX:0,homeZ:0});
+  }
+  const lineup=[['admin',-93],['workshop',-14],['fuel',75],['wash',135],['tires',193]];
+  for(const [id,x] of lineup){const fac=facilities[id];if(!fac)continue;fac.x=x;fac.z=-245;fac.group.position.set(x,0,-245);fac.rotation=0;fac.group.rotation.y=0}
+  serviceTargets.Abastecendo={x:facilities.fuel.x,z:facilities.fuel.z+20};
+  serviceTargets.Manutenção={x:facilities.workshop.x,z:facilities.workshop.z+33};
+  serviceTargets.Borracharia={x:facilities.tires.x,z:facilities.tires.z+13};
+  customParking=slots;nextParkingId=51;selectedParking=null;
+  const ordered=[...trucks].sort((a,b)=>Number(a.id)-Number(b.id));
+  slots.forEach((p,i)=>p.truckId=ordered[i]?.id||null);
+  markedSignature='';reconcileYardCapacity();mapDraw();refreshParkingUi();
+  finance=originalFinance;drawPanel();
+  const ok=saveGame();if(!ok)throw Error('O navegador não confirmou o salvamento local');
+  alert('Pátio reconstruído: '+trucks.length+' caminhões, '+parkingSlots().length+' vagas e '+(sideExpansions+rearExpansions)+' expansões. Saldo preservado: R$ '+finance.toLocaleString('pt-BR')+'.\\n\\nConfira as vagas e depois envie esta partida para a nuvem.');
+ }catch(e){finance=originalFinance;console.error('Reconstrução',e);alert('Erro na reconstrução: '+e.message+'. Há uma cópia de segurança anterior disponível em Recuperar progresso.')}
+};
 const recoveryButton=document.createElement('button');
 recoveryButton.textContent='🕘 Recuperar progresso';
 recoveryButton.style.cssText='position:fixed;bottom:12px;left:12px;z-index:32;background:#17483c;color:white;border:1px solid #9ed8bd;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
