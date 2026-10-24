@@ -548,6 +548,38 @@ rebuildButton.onclick=()=>{
   alert('Pátio reconstruído: '+trucks.length+' caminhões, '+parkingSlots().length+' vagas e '+(sideExpansions+rearExpansions)+' expansões. Saldo preservado: R$ '+finance.toLocaleString('pt-BR')+'.\\n\\nConfira as vagas e depois envie esta partida para a nuvem.');
  }catch(e){finance=originalFinance;console.error('Reconstrução',e);alert('Erro na reconstrução: '+e.message+'. Há uma cópia de segurança anterior disponível em Recuperar progresso.')}
 };
+
+const pairedLayoutButton=document.createElement('button');
+pairedLayoutButton.textContent='🅿️ Organizar vagas em V (6 fileiras)';
+pairedLayoutButton.style.cssText='position:fixed;right:12px;bottom:104px;z-index:35;background:#165343;color:white;border:1px solid #b7dfc7;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
+document.body.appendChild(pairedLayoutButton);
+pairedLayoutButton.onclick=()=>{
+ if(trucks.length!==50||sideExpansions<2||rearExpansions<2){alert('Esta organização exige a partida recuperada com 50 caminhões e 2 expansões laterais + 2 nos fundos. Nenhuma alteração foi feita.');return}
+ if(!confirm('Reorganizar somente as 50 vagas em 6 fileiras, com pares inclinados em V e corredores entre os pares?\\n\\nNão altera caminhões, expansões, estruturas ou saldo. A disposição anterior será guardada para recuperação.'))return;
+ try{
+  const original=JSON.stringify(snapshot());
+  localStorage.setItem('alasg_before_v_layout_'+Date.now(),original);
+  localStorage.setItem(BACKUP_KEY,original);
+  const old=parkingSlots(),ids=[...trucks].sort((a,b)=>Number(a.id)-Number(b.id)).map(t=>t.id);
+  const fresh=[];let n=0;
+  // Cinco fileiras com quatro pares e uma com cinco pares = 50 vagas.
+  // Cada dupla é inclinada para dentro e os intervalos de 40m entre duplas formam vias.
+  for(let row=0;row<6;row++){
+   const pairs=row===5?5:4;
+   for(let pair=0;pair<pairs;pair++){
+    const base=-105+pair*66, z=102-row*51;
+    for(let side=0;side<2;side++){
+     const p={id:'V'+String(n+1).padStart(3,'0'),x:base+side*25,z,rotation:side===0?-Math.PI/7:Math.PI/7,truckId:ids[n]};
+     fresh.push(p);n++;
+    }
+   }
+  }
+  customParking=fresh;nextParkingId=51;selectedParking=null;markedSignature='';
+  reconcileYardCapacity();mapDraw();refreshParkingUi();drawPanel();
+  if(!saveGame())throw Error('Não foi possível salvar no navegador');
+  alert('50 vagas distribuídas em 6 fileiras, organizadas de duas em duas em V, com corredores entre pares. Confira no mapa e no pátio 3D antes de enviar à nuvem.');
+ }catch(e){console.error('Layout em V',e);alert('Erro ao reorganizar: '+e.message+'. A cópia anterior foi preservada.')}
+};
 const recoveryButton=document.createElement('button');
 recoveryButton.textContent='🕘 Recuperar progresso';
 recoveryButton.style.cssText='position:fixed;bottom:12px;left:12px;z-index:32;background:#17483c;color:white;border:1px solid #9ed8bd;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
