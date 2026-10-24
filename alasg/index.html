@@ -552,14 +552,6 @@ rebuildButton.onclick=()=>{
 };
 
 
-// Vagas operacionais temporárias junto às instalações (não consomem as 50 vagas do pátio).
-const serviceBayPanel=document.createElement('div');
-serviceBayPanel.style.cssText='position:fixed;left:12px;top:225px;z-index:33;background:#123c33;color:white;border:1px solid #8bc9b0;border-radius:9px;padding:9px;max-width:260px;font-size:12px';
-serviceBayPanel.innerHTML='<b>🚛 Vagas de atendimento</b><div style="margin-top:6px">Escolha um caminhão e o setor:</div><select id="serviceBayTruck" style="width:100%;margin:5px 0"></select><select id="serviceBayKind" style="width:100%;margin:5px 0"><option value="Abastecendo">⛽ Abastecimento</option><option value="Borracharia">🛞 Borracharia</option><option value="Manutenção">🔧 Oficina</option><option value="Lavando">🧽 Lavador</option></select><button id="serviceBaySend" style="width:100%;padding:7px;background:#1b8060;color:white;border:0;border-radius:5px">Enviar para vaga do setor</button><div id="serviceBayStatus" style="margin-top:5px"></div>';
-document.body.appendChild(serviceBayPanel);
-function refreshServiceBay(){const sel=document.getElementById('serviceBayTruck'),old=sel.value;sel.innerHTML=trucks.filter(t=>t.status==='Pátio').map(t=>'<option value="'+t.id+'">CAV-'+t.id+'</option>').join('');if([...sel.options].some(o=>o.value===old))sel.value=old;document.getElementById('serviceBayStatus').textContent=trucks.filter(t=>['Indo ao serviço','Abastecendo','Borracharia','Manutenção','Lavando'].includes(t.status)).map(t=>'CAV-'+t.id+': '+(t.status==='Indo ao serviço'?t.serviceKind:t.status)).join(' • ')||'Nenhum veículo em atendimento'}
-document.getElementById('serviceBaySend').onclick=()=>{const id=document.getElementById('serviceBayTruck').value,kind=document.getElementById('serviceBayKind').value,t=trucks.find(t=>t.id===id&&t.status==='Pátio');if(!t)return alert('Selecione um caminhão estacionado.');if(trucks.some(v=>v!==t&&['Indo ao serviço',kind].includes(v.status)&&v.serviceKind===kind))return alert('Vaga de atendimento ocupada neste setor.');beginServiceRoute(t,kind);refreshServiceBay();};
-setInterval(refreshServiceBay,2500);refreshServiceBay();
 const pairedLayoutButton=document.createElement('button');
 pairedLayoutButton.textContent='🅿️ Organizar vagas em V (6 fileiras)';
 pairedLayoutButton.style.cssText='position:fixed;right:12px;bottom:104px;z-index:35;background:#165343;color:white;border:1px solid #b7dfc7;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
