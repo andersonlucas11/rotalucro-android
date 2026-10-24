@@ -493,10 +493,11 @@ restoreGame();
 reconcileYardCapacity();
 if(localStorage.getItem(SAVE_KEY)&&!restoring&&!window.ALASGRestoreFailed){}
 setInterval(()=>{if(!document.hidden)saveGame()},5000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){saveGame()}else{const delta=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-lastSave)/1000));if(delta>3){const completed=simulateAway(delta);reconcileYardCapacity();log.unshift('Retorno à aba: '+Math.floor(delta/60)+' min • '+completed+' viagens concluídas.');log=log.slice(0,9);drawPanel();saveGame()}}});
+let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden){saveGame();hiddenAt=Date.now()}else{const delta=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,((hiddenAt||lastSave)?Date.now()-(hiddenAt||lastSave):0)/1000));hiddenAt=0;if(delta>3){const completed=simulateAway(delta);reconcileYardCapacity();log.unshift('Retorno à aba: '+Math.floor(delta/60)+' min • '+completed+' viagens concluídas.');log=log.slice(0,9);drawPanel();saveGame()}}});
 // Salvamento local periódico, mesmo sem apertar o botão ou sair da página.
 setInterval(()=>{if(!document.hidden&&!restoring)saveGame()},30000);
 window.addEventListener('pagehide',saveGame);
+window.addEventListener('focus',()=>{if(!document.hidden&&hiddenAt){const delta=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-hiddenAt)/1000));hiddenAt=0;if(delta>3){const completed=simulateAway(delta);reconcileYardCapacity();record('Ricardo: '+Math.floor(delta/60)+' min de ausência processados • '+completed+' viagens concluídas.');saveGame()}}});
 window.addEventListener('beforeunload',saveGame);
 const saveButton=document.createElement('button');
 saveButton.textContent='💾 Salvar jogo';saveButton.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:30;padding:9px 12px;background:#176f52;color:white;border:1px solid #a9eac9;border-radius:9px;font-weight:bold;cursor:pointer';
@@ -567,9 +568,9 @@ pairedLayoutButton.onclick=()=>{
   for(let row=0;row<6;row++){
    const pairs=row===5?5:4;
    for(let pair=0;pair<pairs;pair++){
-    const base=-105+pair*66, z=102-row*51;
+    const base=-100+pair*72, z=70-row*57;
     for(let side=0;side<2;side++){
-     const p={id:'V'+String(n+1).padStart(3,'0'),x:base+side*25,z,rotation:side===0?-Math.PI/7:Math.PI/7,truckId:ids[n]};
+     const p={id:'V'+String(n+1).padStart(3,'0'),x:base+side*31,z,rotation:side===0?-Math.PI/5:Math.PI/5,truckId:ids[n]};
      fresh.push(p);n++;
     }
    }
