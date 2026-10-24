@@ -294,11 +294,11 @@ for(const p of people){
 }
 if(paused)return;
 simMinutes+=dt*speedMultiplier;clockSim+=dt;for(const t of trucks){if(t.status==='Abastecendo'||t.status==='Manutenção'||t.status==='Borracharia'||t.status==='Lavando'){t.serviceLeft-=dt*speedMultiplier;if(t.serviceLeft<=0)finishService(t);continue;}if(t.status==='Indo ao serviço'){if(moveRoute(t,dt)){t.status=t.serviceKind;t.serviceLeft=t.status==='Abastecendo'?25:t.status==='Borracharia'?55:t.status==='Lavando'?45:80;record('CAV-'+t.id+' chegou à '+t.status.toLowerCase()+'.');}continue;}if(t.status==='Estacionando'){if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35)beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');else record('CAV-'+t.id+' estacionado na vaga.');}continue;}if(t.status==='Movendo vaga'){if(!t.route||t.route.length<2){t.route=[{x:t.mesh.position.x,z:t.mesh.position.z},{x:t.homeX,z:t.homeZ}];t.routeIndex=0;}if(moveRoute(t,dt)){t.status='Pátio';parkTruckPrecisely(t);record('CAV-'+t.id+' manobrou e estacionou na posição da vaga.')}continue;}if(t.status==='Pátio'){parkTruckPrecisely(t);continue;}if(t.status==='Saindo'){if(moveRoute(t,dt)){t.status='Viagem';t.mesh.visible=false;record('CAV-'+t.id+' cruzou a portaria e entrou na estrada. Previsão '+fmtTime(t.returnAt)+'.')}}else if(t.status==='Viagem'){if(simMinutes>=t.returnAt){beginRoute(t,true);record('CAV-'+t.id+' chegou à portaria e está entrando no pátio.')}}else if(t.status==='Entrando'){if(moveRoute(t,dt)){parkTruckPrecisely(t);t.status='Pátio';const km=t.plannedKm,revenue=km*8;t.km+=km;t.earnings+=revenue;totalKm+=km;totalRevenue+=revenue;finance+=revenue;t.fuel=Math.max(0,t.fuel-km/18);t.health=Math.max(0,t.health-km/110);t.tires=Math.max(0,t.tires-km/140);if(t.pendingSale){sellTruck(t);continue;}if(t.fuel<35||t.health<45||t.tires<35){beginServiceRoute(t,t.fuel<35?'Abastecendo':t.health<45?'Manutenção':'Borracharia');}else record('CAV-'+t.id+' estacionou após '+km+' km. Fretes ida/volta: R$ '+revenue.toLocaleString('pt-BR')+'.')}}}
-if(autoRicardo&&simMinutes>=nextRicardoDispatch){nextRicardoDispatch=simMinutes+45;const available=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35);if(available)dispatch();else{const service=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&(t.fuel<35||t.health<45||t.tires<35));if(service)beginServiceRoute(service,service.fuel<35?'Abastecendo':service.health<45?'Manutenção':'Borracharia');}}if(clockSim>2){clockSim=0;drawPanel();saveGame()}}
+if(autoRicardo&&simMinutes>=nextRicardoDispatch){nextRicardoDispatch=simMinutes+20;const available=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&t.fuel>=35&&t.health>=45&&t.tires>=35);if(available)dispatch();else{const service=trucks.find(t=>t.status==='Pátio'&&!t.pendingSale&&(t.fuel<35||t.health<45||t.tires<35));if(service)beginServiceRoute(service,service.fuel<35?'Abastecendo':service.health<45?'Manutenção':'Borracharia');}}if(clockSim>2){clockSim=0;drawPanel();saveGame()}}
 
 // ALASG V18: salvamento local e simulação de tempo decorrido entre sessões.
 // Navegadores suspendem JavaScript com a página fechada: os eventos são calculados ao voltar.
-let nextRicardoDispatch=simMinutes+5;
+let nextRicardoDispatch=simMinutes+20;
 const SAVE_KEY='alasg_v18_company_state';
 const BACKUP_KEY='alasg_v18_company_state_backup';
 const HISTORY_KEY='alasg_v18_company_state_history';
@@ -351,10 +351,10 @@ function simulateAway(seconds){
   }
  }
  if(autoRicardo){
-  // Event-based approximation: a dispatch every 45 simulated minutes, with a per-truck return.
-  const start=simMinutes,first=(Math.floor(start/45)+1)*45;
+  // Event-based approximation: a dispatch every 20 simulated minutes, with a per-truck return.
+  const start=simMinutes,first=(Math.floor(start/20)+1)*20;
   const freeAt=new Map(trucks.map(t=>[t,t.status==='Viagem'?(t.returnAt||finish+1):start]));
-  for(let departure=first;departure<finish;departure+=45){
+  for(let departure=first;departure<finish;departure+=20){
    const t=trucks.find(t=>!t.pendingSale&&freeAt.has(t)&&freeAt.get(t)<=departure&&t.fuel>=35&&t.health>=45&&t.tires>=35);
    if(!t)continue;
    t.trip++;t.duration=240+((Number(t.id)*43+t.trip*71)%480);
@@ -468,7 +468,7 @@ function restoreGame(cloudOverride=null){
    }
   }
   finance=Number.isFinite(Number(saved.finance))?Number(saved.finance):finance;
-  simMinutes=saved.simMinutes;nextRicardoDispatch=simMinutes+5;shift=saved.shift;
+  simMinutes=saved.simMinutes;nextRicardoDispatch=simMinutes+20;shift=saved.shift;
   speedMultiplier=saved.speedMultiplier||1;paused=!!saved.paused;autoRicardo=saved.autoRicardo!==false;
   employeeCount=saved.employeeCount;nextTruckId=saved.nextTruckId;tireJobs=saved.tireJobs;
   totalRevenue=saved.totalRevenue;totalKm=saved.totalKm;log=saved.log||[];
