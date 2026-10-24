@@ -448,8 +448,8 @@ function restoreGame(cloudOverride=null){
  restoring=true;let restoreFailed=false;
  try{
   // Rebuild bought lots with existing controls; reimburse their construction during restoration.
-  for(let i=sideExpansions;i<(saved.sideExpansions||0);i++){finance=1500000;document.getElementById('expand').click()}
-  for(let i=rearExpansions;i<(saved.rearExpansions||0);i++){finance=1500000;document.getElementById('expandRear').click()}
+  for(let i=sideExpansions;i<(saved.sideExpansions||0);i++){drawPanel();const btn=document.getElementById('expand');if(!btn)throw Error('Botão de expansão lateral indisponível');finance=1500000;btn.click()}
+  for(let i=rearExpansions;i<(saved.rearExpansions||0);i++){drawPanel();const btn=document.getElementById('expandRear');if(!btn)throw Error('Botão de expansão dos fundos indisponível');finance=1500000;btn.click()}
   // Restore truck fleet from stable ids.
   const wanted=new Set((saved.trucks||[]).map(t=>t.id));
   for(const t of [...trucks])if(!wanted.has(t.id)){scene.remove(t.mesh);trucks.splice(trucks.indexOf(t),1)}
@@ -490,6 +490,7 @@ function restoreGame(cloudOverride=null){
  }catch(e){restoreFailed=true;window.ALASGRestoreFailed=true;console.error('Erro ao recuperar jogo',e);console.warn('Falha no carregamento; mantendo cópia local:',e);document.getElementById('toast').textContent='⚠️ Falha ao carregar partida: '+e.message+' (original preservado)'} 
  finally{restoring=false;if(!restoreFailed){localStorage.removeItem('alasg_cloud_import_pending_v1');saveGame();if(cloudOverride){drawPanel();document.getElementById('toast').textContent='☁️ Partida da nuvem aplicada: R$ '+Number(finance).toLocaleString('pt-BR')+' • '+trucks.length+' caminhões';}}}
 }
+drawPanel();
 restoreGame();
 reconcileYardCapacity();
 if(localStorage.getItem(SAVE_KEY)&&!restoring&&!window.ALASGRestoreFailed){}
