@@ -494,12 +494,37 @@ reconcileYardCapacity();
 if(localStorage.getItem(SAVE_KEY))saveGame();
 setInterval(()=>{if(!document.hidden)saveGame()},5000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveGame()}else{const delta=Math.min(OFFLINE_LIMIT_SECONDS,Math.max(0,(Date.now()-lastSave)/1000));if(delta>3){const completed=simulateAway(delta);reconcileYardCapacity();log.unshift('Retorno à aba: '+Math.floor(delta/60)+' min • '+completed+' viagens concluídas.');log=log.slice(0,9);drawPanel();saveGame()}}});
+// Salvamento local periódico, mesmo sem apertar o botão ou sair da página.
+setInterval(()=>{if(!document.hidden&&!restoring)saveGame()},30000);
 window.addEventListener('pagehide',saveGame);
 window.addEventListener('beforeunload',saveGame);
 const saveButton=document.createElement('button');
 saveButton.textContent='💾 Salvar jogo';saveButton.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:30;padding:9px 12px;background:#176f52;color:white;border:1px solid #a9eac9;border-radius:9px;font-weight:bold;cursor:pointer';
 saveButton.onclick=()=>{const ok=saveGame();document.getElementById('toast').textContent=ok?'✓ Jogo salvo neste navegador.':'⚠️ Navegador bloqueou o salvamento.'};
 document.body.appendChild(saveButton);
+const recoveryButton=document.createElement('button');
+recoveryButton.textContent='🕘 Recuperar progresso';
+recoveryButton.style.cssText='position:fixed;bottom:12px;left:12px;z-index:32;background:#17483c;color:white;border:1px solid #9ed8bd;border-radius:8px;padding:9px;cursor:pointer;font-weight:bold';
+document.body.appendChild(recoveryButton);
+recoveryButton.onclick=()=>{
+ let entries=[];
+ const add=(label,raw)=>{try{const v=typeof raw==='string'?JSON.parse(raw):raw;if(v&&v.version===18&&Array.isArray(v.trucks)&&v.trucks.length)entries.push({label,v})}catch(e){}};
+ add('Partida atual',localStorage.getItem(SAVE_KEY));
+ add('Cópia de segurança',localStorage.getItem(BACKUP_KEY));
+ try{(JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')||[]).forEach((v,i)=>add('Histórico '+(i+1),v))}catch(e){}
+ for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('alasg_pre_cloud_import_'))add('Antes de importar da nuvem',localStorage.getItem(key))}
+ entries.sort((a,b)=>(b.v.savedAt||0)-(a.v.savedAt||0));
+ if(!entries.length){alert('Nenhum salvamento local encontrado neste navegador.');return}
+ const lines=entries.slice(0,25).map((e,i)=>(i+1)+'. '+e.label+' • '+new Date(e.v.savedAt||0).toLocaleString('pt-BR')+' • '+e.v.trucks.length+' caminhões • R$ '+Number(e.v.finance||0).toLocaleString('pt-BR'));
+ const answer=prompt('ESCOLHA UMA VERSÃO PARA RECUPERAR:\\n\\n'+lines.join('\\n')+'\\n\\nDigite o número (Cancelar para não alterar):');
+ if(answer===null)return;
+ const index=Number(answer)-1;
+ if(!Number.isInteger(index)||index<0||index>=Math.min(25,entries.length)){alert('Número inválido. Nenhuma alteração feita.');return}
+ const chosen=entries[index];
+ if(!confirm('Recuperar '+chosen.label+'?\\n'+chosen.v.trucks.length+' caminhões e R$ '+Number(chosen.v.finance||0).toLocaleString('pt-BR')+'.\\nO progresso atual será guardado como cópia de segurança.'))return;
+ try{const current=localStorage.getItem(SAVE_KEY);if(current)localStorage.setItem('alasg_manual_recovery_backup_'+Date.now(),current);localStorage.setItem(SAVE_KEY,JSON.stringify({...chosen.v,savedAt:Date.now()}));localStorage.setItem('alasg_cloud_import_pending_v1','1');location.reload()}catch(e){alert('Não foi possível recuperar: '+e.message)}
+};
+
 window.ALASGCloudBridge={
  getSave(){saveGame();return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')},
  getLocal(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){return null}},
